@@ -82,6 +82,20 @@ def test_restore_rejects_non_string_values() -> None:
         redactor.restore("[X_1]", {"[X_1]": 5})  # type: ignore[dict-item]
 
 
+def test_restore_is_single_pass_no_double_expansion() -> None:
+    # A value that contains another placeholder must not be re-expanded.
+    redactor = Redactor(FakeEngine([]))
+    out = redactor.restore("[A_1]", {"[A_1]": "x[B_1]y", "[B_1]": "SECRET"})
+    assert out == "x[B_1]y"
+
+
+def test_restore_rejects_empty_placeholder_key() -> None:
+    # An empty key would otherwise be inserted between every character.
+    redactor = Redactor(FakeEngine([]))
+    with pytest.raises(RestoreError):
+        redactor.restore("ab", {"": "Z"})
+
+
 def test_unicode_offsets_preserved() -> None:
     text = "🔒 patient José 1234567 done"
     start = text.index("José")

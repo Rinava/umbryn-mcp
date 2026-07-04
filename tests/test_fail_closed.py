@@ -63,6 +63,31 @@ def test_non_entity_result_blocks() -> None:
         redactor.redact(TEXT)
 
 
+def test_uncertain_span_overlapping_a_confident_span_still_blocks() -> None:
+    # Regression for a fail-closed bypass: overlap resolution must not run before
+    # the confidence gate, or an uncertain span that overlaps a confident one gets
+    # dropped and its non-overlapping bytes leak in cleartext.
+    text = "Patient SSN 123-45-6789 phone"
+    entities = make_entities(
+        text,
+        ("PHONE_NUMBER", 8, 18, 0.90),  # confident, overlaps the SSN
+        ("US_SSN", 12, 23, 0.40),  # uncertain; overlap res would drop it
+    )
+    redactor = Redactor(FakeEngine(entities), detection_floor=0.35, min_confidence=0.5)
+    with pytest.raises(LowConfidenceError):
+        redactor.redact(text)
+
+
+def test_detect_surfaces_overlapped_uncertain_candidate() -> None:
+    # detect must report the full candidate set, including a lower-scored span
+    # nested in / overlapping a higher-scored one.
+    text = "Patient SSN 123-45-6789 phone"
+    entities = make_entities(text, ("PHONE_NUMBER", 8, 18, 0.90), ("US_SSN", 12, 23, 0.40))
+    redactor = Redactor(FakeEngine(entities), detection_floor=0.35, min_confidence=0.5)
+    result = redactor.detect(text)
+    assert sorted(e.entity_type for e in result.entities) == ["PHONE_NUMBER", "US_SSN"]
+
+
 def test_detect_does_not_block_on_low_confidence() -> None:
     # detect is for inspection: it must SURFACE uncertain hits, never block.
     entities = make_entities(TEXT, ("US_SSN", 32, 39, 0.40))

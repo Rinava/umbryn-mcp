@@ -26,6 +26,8 @@ span, then type name, then position), so output is stable across runs.
 
 from __future__ import annotations
 
+import re
+
 from phi_mcp.engine import DetectionEngine
 from phi_mcp.errors import (
     DetectionError,
@@ -82,13 +84,15 @@ class Redactor:
         """Find PHI/PII without mutating the input.
 
         Returns every candidate at or above ``detection_floor`` (including the
-        uncertain band), so callers can inspect coverage before trusting the
-        boundary. Unlike :meth:`redact`, this never blocks on low confidence —
-        surfacing the uncertain hits is the whole point.
+        uncertain band, and including candidates that overlap a stronger one), so
+        callers can inspect coverage before trusting the boundary. Overlaps are
+        NOT resolved here — surfacing every uncertain hit is the whole point.
+        Unlike :meth:`redact`, this never blocks on low confidence.
         """
         self._check_input(text)
-        entities = self._resolve_overlaps(self._run_engine(text))
-        return DetectionResult(entities=tuple(entities))
+        candidates = self._run_engine(text)
+        ordered = sorted(candidates, key=lambda e: (e.start, e.end, e.entity_type))
+        return DetectionResult(entities=tuple(ordered))
 
     def redact(self, text: str) -> RedactionResult:
         """Replace detected PHI/PII with reversible typed placeholders.
@@ -96,14 +100,18 @@ class Redactor:
         Fail-closed on two paths:
 
         * the engine raising or returning a malformed span → :class:`DetectionError`;
-        * any surviving candidate below ``min_confidence`` → :class:`LowConfidenceError`.
+        * any candidate below ``min_confidence`` → :class:`LowConfidenceError`.
 
         On success, every returned placeholder is reversible via :meth:`restore`.
         """
         self._check_input(text)
-        entities = self._resolve_overlaps(self._run_engine(text))
+        # Gate on the FULL candidate set *before* resolving overlaps. Resolving
+        # first could drop an uncertain span that overlaps a confident one, and
+        # its non-overlapping bytes would then leak in cleartext — a fail-closed
+        # bypass. Any uncertain candidate at all must block the whole call.
+        candidates = self._run_engine(text)
 
-        uncertain = [e for e in entities if e.score < self.min_confidence]
+        uncertain = [e for e in candidates if e.score < self.min_confidence]
         if uncertain:
             raise LowConfidenceError(
                 f"{len(uncertain)} detection(s) below the confidence threshold "
@@ -116,28 +124,38 @@ class Redactor:
                 },
             )
 
-        return self._build_redaction(text, entities)
+        return self._build_redaction(text, self._resolve_overlaps(candidates))
 
     def restore(self, redacted_text: str, token_map: dict[str, str]) -> str:
         """Invert :meth:`redact`: substitute every placeholder back to its value.
 
-        For output produced by :meth:`redact`, this returns the original text
-        byte-for-byte.
+        For output produced by :meth:`redact` this returns the original text
+        byte-for-byte. The substitution is **single-pass**, so a value that
+        happens to contain another placeholder is never re-expanded — this holds
+        even for token maps not produced by :meth:`redact`.
         """
         if not isinstance(redacted_text, str):
             raise InvalidInputError("redacted_text must be a string")
         if not isinstance(token_map, dict):
             raise InvalidInputError("token_map must be a mapping of placeholder -> value")
+        if not token_map:
+            return redacted_text
 
-        result = redacted_text
-        # Longest placeholder first is defensive; the bracketed format is already
-        # prefix-free, so order does not affect correctness.
-        for placeholder in sorted(token_map, key=len, reverse=True):
-            value = token_map[placeholder]
+        for placeholder, value in token_map.items():
             if not isinstance(placeholder, str) or not isinstance(value, str):
                 raise RestoreError("token_map entries must be string -> string")
-            result = result.replace(placeholder, value)
-        return result
+            if placeholder == "":
+                raise RestoreError("token_map keys (placeholders) must be non-empty")
+
+        # One left-to-right pass over the union of placeholders: each match is
+        # replaced exactly once and the inserted value is never re-scanned, so
+        # substituted text cannot be mistaken for another placeholder. Longest
+        # key first makes a longer placeholder win where one is a prefix of
+        # another.
+        pattern = re.compile(
+            "|".join(re.escape(p) for p in sorted(token_map, key=len, reverse=True))
+        )
+        return pattern.sub(lambda m: token_map[m.group(0)], redacted_text)
 
     # -- internals ----------------------------------------------------------
 
