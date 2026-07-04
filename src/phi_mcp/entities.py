@@ -44,12 +44,3 @@ ALL_ENTITIES: Final = (
     MEDICARE_BENEFICIARY_ID,
     CLIA_NUMBER,
 )
-
-#: Presidio's built-in entity names -> our canonical names. Anything not listed
-#: here is passed through unchanged (our custom recognizers already emit
-#: canonical names).
-PRESIDIO_ENTITY_MAP: Final = {
-    "US_NPI": NPI,
-    "US_MBI": MEDICARE_BENEFICIARY_ID,
-    "MEDICAL_LICENSE": DEA_NUMBER,
-}

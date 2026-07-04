@@ -27,15 +27,16 @@ def _engine():
     return PresidioEngine(spacy_model="en_core_web_sm")
 
 
-def test_presidio_detects_person_and_normalises_names() -> None:
+def test_presidio_adds_ner_on_top_of_the_identifier_ruleset() -> None:
     engine = _engine()
     found = {e.entity_type for e in engine.detect("Dr. Alice Reyes wrote NPI 1234567893.")}
-    # PERSON comes from spaCy NER; NPI is normalised from Presidio's US_NPI.
+    # PERSON comes from spaCy NER (Presidio's job); NPI comes from the shared,
+    # checksum-validated ruleset (not Presidio's swallowed US_NPI).
     assert entities.PERSON in found
     assert entities.NPI in found
 
 
-def test_presidio_custom_mrn_recognizer_fires_with_context() -> None:
+def test_presidio_engine_still_catches_context_gated_mrn() -> None:
     engine = _engine()
     found = {e.entity_type for e in engine.detect("Patient MRN: 1234567 admitted today.")}
     assert entities.MEDICAL_RECORD_NUMBER in found
