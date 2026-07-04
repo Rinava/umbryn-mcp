@@ -38,7 +38,6 @@ class RegexEngine:
     name = "regex"
 
     def __init__(self, recognizers: tuple[Recognizer, ...] = DEFAULT_RECOGNIZERS) -> None:
-        self._recognizers = recognizers
         # Compile once; recognizers are immutable so this is safe to cache. Each
         # entry also carries a compiled context matcher (or None) so context words
         # match on word boundaries — "lab" must not fire inside "collaborate".

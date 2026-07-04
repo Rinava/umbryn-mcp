@@ -26,21 +26,3 @@ DEA_NUMBER: Final = "DEA_NUMBER"  # Drug Enforcement Administration number (chec
 MEDICAL_RECORD_NUMBER: Final = "MEDICAL_RECORD_NUMBER"  # MRN, context-gated
 MEDICARE_BENEFICIARY_ID: Final = "MEDICARE_BENEFICIARY_ID"  # MBI, position-typed
 CLIA_NUMBER: Final = "CLIA_NUMBER"  # Clinical lab identifier
-
-#: Everything the project can name. Used for validation and docs.
-ALL_ENTITIES: Final = (
-    PERSON,
-    LOCATION,
-    EMAIL_ADDRESS,
-    PHONE_NUMBER,
-    US_SSN,
-    CREDIT_CARD,
-    IP_ADDRESS,
-    URL,
-    DATE_TIME,
-    NPI,
-    DEA_NUMBER,
-    MEDICAL_RECORD_NUMBER,
-    MEDICARE_BENEFICIARY_ID,
-    CLIA_NUMBER,
-)
