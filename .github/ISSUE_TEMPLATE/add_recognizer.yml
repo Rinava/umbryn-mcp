@@ -1,0 +1,51 @@
+name: ➕ Add an entity recognizer
+description: Propose detection support for a new PHI/PII identifier (great first contribution!)
+labels: ["enhancement", "good first issue", "recognizer"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Adding a recognizer is the friendliest way to contribute here. Fill this
+        in and it doubles as the spec for the PR. See the recognizer guide in
+        [CONTRIBUTING.md](../CONTRIBUTING.md#how-to-add-a-recognizer-the-classic-good-first-issue).
+  - type: input
+    id: entity
+    attributes:
+      label: Identifier name
+      placeholder: "UK NHS Number"
+    validations:
+      required: true
+  - type: input
+    id: spec
+    attributes:
+      label: Authoritative format spec (link)
+      description: Where is the format/check-digit rule documented?
+      placeholder: "https://…"
+    validations:
+      required: true
+  - type: dropdown
+    id: checkdigit
+    attributes:
+      label: Does it have a check digit / validation algorithm?
+      options: ["Yes", "No", "Not sure"]
+    validations:
+      required: true
+  - type: input
+    id: example
+    attributes:
+      label: A valid SYNTHETIC example
+      description: An invented value in the correct format — never a real one.
+      placeholder: "943 476 5919"
+    validations:
+      required: true
+  - type: input
+    id: context
+    attributes:
+      label: Context words (for format-less identifiers)
+      placeholder: "nhs, nhs number"
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Want to implement it?
+      options:
+        - label: I'd like to open the PR myself (we'll help!)

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.rinava/phi-mcp",
+  "description": "Fail-closed MCP server that redacts PII/PHI from text before it reaches an LLM — self-hosted, no egress, HIPAA-aware.",
+  "repository": {
+    "url": "https://github.com/Rinava/phi-mcp",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "phi-redact-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "PHI_MCP_ENGINE",
+          "description": "Detection engine: auto (default), regex, or presidio",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "PHI_MCP_MIN_CONFIDENCE",
+          "description": "Trust threshold (0-1); detections below it fail closed. Default 0.5",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "PHI_MCP_DETECTION_FLOOR",
+          "description": "Sensitivity floor (0-1); below this a signal is noise. Default 0.35",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
