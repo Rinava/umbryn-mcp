@@ -14,15 +14,16 @@
 Teams building LLM and agent pipelines in regulated domains have no clean, drop-in way to strip PHI/PII from a payload *before* it crosses into a model provider's infrastructure. `phi-redact-mcp` is that boundary: three MCP tools — `redact`, `restore`, `detect` — that scrub sensitive values into reversible placeholders, run entirely inside infrastructure you control, and **block the request if detection is uncertain instead of leaking data**.
 
 ```text
-$ redact "Patient MRN: 1234567, provider NPI 1234567893, ssn 078-05-1120, john.doe@example.com"
+redact("Patient MRN: 1234567, provider NPI 1234567893, ssn 078-05-1120, john.doe@example.com")
 
-  → "Patient MRN: [MEDICAL_RECORD_NUMBER_1], provider NPI [NPI_1], ssn [US_SSN_1], [EMAIL_ADDRESS_1]"
+  redacted_text  (safe to send to the model):
+    "Patient MRN: [MEDICAL_RECORD_NUMBER_1], provider NPI [NPI_1], ssn [US_SSN_1], [EMAIL_ADDRESS_1]"
 
-  token_map (kept local, never sent to the model):
+  token_map      (kept local, never sent to the model):
     [MEDICAL_RECORD_NUMBER_1] → 1234567
-    [NPI_1]                    → 1234567893
-    [US_SSN_1]                 → 078-05-1120
-    [EMAIL_ADDRESS_1]          → john.doe@example.com
+    [NPI_1]                   → 1234567893
+    [US_SSN_1]                → 078-05-1120
+    [EMAIL_ADDRESS_1]         → john.doe@example.com
 ```
 
 Send the redacted text to the model; keep the `token_map` local; call `restore` afterward to rehydrate the result. Round-trips are **byte-exact** and proven with property-based tests.
@@ -43,7 +44,7 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 | Works with **zero heavy deps** | ❌ (needs spaCy) | ✅ | n/a | ✅ (regex engine) |
 | Optional ML NER (names, addresses) | ✅ | ❌ | ✅ | ✅ (`[presidio]` extra) |
 
-**Why it was built:** MCP went mainstream fast — it's now first-class in Claude, Cursor, and ChatGPT, across thousands of servers — but the PHI/PII-redaction corner was left to a few unmaintained wrappers. A team shipping clinical or financial text to a model shouldn't have to choose between rolling their own boundary and trusting a Business Associate Agreement to paper over raw PHI sitting in a provider's logs. `phi-redact-mcp` closes that gap with a single honest, auditable, fail-closed boundary — and it's open source so the redaction logic you rely on is fully inspectable, not a black box.
+**Why it was built:** MCP went mainstream fast — it's now first-class in Claude, Cursor, and ChatGPT, across thousands of servers — but the PHI/PII-redaction corner was left to a few unmaintained wrappers. This fills that gap with a single honest, auditable, fail-closed boundary, kept open source so the redaction logic you depend on is fully inspectable rather than a black box.
 
 ## Features
 
@@ -54,7 +55,7 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 - **Optional ML upgrade** — `pip install "phi-redact-mcp[presidio]"` adds Microsoft Presidio + spaCy for `PERSON`/`LOCATION` NER, transparently.
 - **Reversible & deterministic** — collision-proof typed placeholders make `restore(redact(x)) == x` for *arbitrary* input; same input + config always yields the same output.
 
-## When to use it — and when not to
+## When to use it (and when not to)
 
 **Reach for `phi-redact-mcp` when:**
 
