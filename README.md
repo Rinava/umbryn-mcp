@@ -43,6 +43,8 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 | Works with **zero heavy deps** | ❌ (needs spaCy) | ✅ | n/a | ✅ (regex engine) |
 | Optional ML NER (names, addresses) | ✅ | ❌ | ✅ | ✅ (`[presidio]` extra) |
 
+**Why it was built:** MCP went mainstream fast — it's now first-class in Claude, Cursor, and ChatGPT, across thousands of servers — but the PHI/PII-redaction corner was left to a few unmaintained wrappers. A team shipping clinical or financial text to a model shouldn't have to choose between rolling their own boundary and trusting a Business Associate Agreement to paper over raw PHI sitting in a provider's logs. `phi-redact-mcp` closes that gap with a single honest, auditable, fail-closed boundary — and it's open source so the redaction logic you rely on is fully inspectable, not a black box.
+
 ## Features
 
 - **Three tools, one boundary** — `redact` (→ scrubbed text + reversible token map), `restore` (→ original), `detect` (→ entities found, no mutation).
@@ -51,6 +53,24 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 - **Zero-egress, self-hosted** — the default engine is pure regex + checksums with **no network calls and no heavy dependencies**. It installs anywhere Python does.
 - **Optional ML upgrade** — `pip install "phi-redact-mcp[presidio]"` adds Microsoft Presidio + spaCy for `PERSON`/`LOCATION` NER, transparently.
 - **Reversible & deterministic** — collision-proof typed placeholders make `restore(redact(x)) == x` for *arbitrary* input; same input + config always yields the same output.
+
+## When to use it — and when not to
+
+**Reach for `phi-redact-mcp` when:**
+
+- You send healthcare, clinical, financial, or user-generated text to a **third-party LLM API** and need PHI/PII kept out of that provider's infrastructure and logs.
+- You're building an **agent or MCP pipeline** in a regulated domain and want a drop-in scrubbing boundary you wire in with one tool call.
+- You need **reversible** redaction so downstream steps still work: `redact` → send to model → `restore`.
+- You want a **self-hosted, no-egress** detector you can audit line by line.
+- You need **HIPAA-specific identifiers** (NPI, DEA, Medicare MBI, MRN, CLIA), not just names and emails.
+
+**Reach for something else when:**
+
+- You need **irreversible** de-identification / anonymization (tokenization, k-anonymity) — redaction here is reversible by design.
+- You need to redact **non-text** data (images, audio, PDFs, database rows) — scope is text.
+- You want a **certified compliance** product — this is one technical control, not a compliance program (see [Scope & honest limitations](#scope--honest-limitations)).
+- You want a **transparent proxy** that auto-scrubs everything in the request path — v1 is explicit tool calls; proxy mode is on the [roadmap](ROADMAP.md).
+- You require **guaranteed 100% recall** — no detector, this one included, can promise that.
 
 ## Quickstart (< 60 seconds)
 
@@ -83,7 +103,9 @@ python -m spacy download en_core_web_lg
 
 The server auto-detects Presidio and upgrades — no config change needed. (Set `PHI_MCP_ENGINE=regex` to force the dependency-free engine, or `=presidio` to require the ML one.)
 
-## Architecture
+## How it works
+
+A tool call comes in over stdio; the `Redactor` core runs the configured detection engine, resolves overlaps deterministically, applies the fail-closed threshold check, and swaps detected spans for reversible typed placeholders. Only scrubbed text is meant to leave the boundary you run.
 
 ```mermaid
 flowchart LR
@@ -108,6 +130,17 @@ Reverses a redaction, recovering the original text exactly. Safe to call on mode
 
 ### `detect(text) → { entities, count }`
 Reports the entities found — type, span, confidence — **without** modifying the text. Unlike `redact`, it surfaces low-confidence hits rather than blocking, so you can inspect coverage before trusting the boundary in a pipeline.
+
+## How to use it (a real pipeline)
+
+The pattern is **redact → model → restore**, with the token map never leaving your side:
+
+1. **Scrub before the model.** Call `redact(user_text)`. Send only `redacted_text` to the LLM. Keep `token_map` in your process — treat it as sensitively as the raw input, and never pass it to the model.
+2. **Let the model work on placeholders.** It sees `[NPI_1]`, `[US_SSN_1]`, etc. — semantically neutral tokens it can reason about and echo back.
+3. **Rehydrate after.** Call `restore(model_output, token_map)` to swap the real values back into the model's response before it reaches your user or database.
+4. **Handle the block.** If `redact` returns a `[LOW_CONFIDENCE]` or `[DETECTION_ERROR]` tool error, the boundary refused to leak — surface it, tighten input, or lower the risk, but don't send the raw text onward.
+
+Before trusting it in a pipeline, call `detect(sample_text)` on representative (synthetic) data to see exactly what is and isn't caught, and tune the thresholds (below) to your risk tolerance.
 
 ## Fail-closed, precisely
 
@@ -151,9 +184,13 @@ Detection quality is measured, not asserted — see the [eval harness](eval/). O
 
 Concretely, this project **does not**: guarantee 100% detection (no detector does), de-identify beyond reversible redaction, cover non-text data, or act as a transparent proxy in v1 (redaction is via explicit tool calls you wire in). No detector is perfect — evaluate on your own representative data before relying on it. See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for the full boundary, assumptions, and residual risks, and [SECURITY.md](SECURITY.md) to report issues.
 
-## Contributing
+## How to contribute
 
-Contributions are very welcome — this is a friendly place to make your first open-source PR. Adding a new recognizer (a regex + optional checksum + a test) is a great starting point. See [CONTRIBUTING.md](CONTRIBUTING.md), the [good first issues](https://github.com/Rinava/phi-mcp/contribute), and the [roadmap](ROADMAP.md).
+Contributions are very welcome — this is a deliberately friendly place to make your first open-source PR, and the maintainer tries to respond quickly.
+
+**The easiest high-value contribution:** add a detection recognizer for a new identifier (a regex + an optional check-digit validator + a test). The [add-a-recognizer issue form](https://github.com/Rinava/phi-mcp/issues/new?template=add_recognizer.yml) doubles as the spec, and [CONTRIBUTING.md](CONTRIBUTING.md#how-to-add-a-recognizer-the-classic-good-first-issue) walks through the six steps.
+
+Other good ways to help: improve docs, add test cases or example client configs, or pick up something from the [roadmap](ROADMAP.md). Browse [good first issues](https://github.com/Rinava/phi-mcp/contribute) or open an issue to propose something.
 
 ```bash
 git clone https://github.com/Rinava/phi-mcp && cd phi-mcp
@@ -162,6 +199,8 @@ pytest                 # fast invariant suite (Presidio faked, sub-second)
 ruff check . && mypy src/phi_mcp
 python eval/run_eval.py
 ```
+
+The full guide — dev setup, conventions, and the **no-real-PHI rule for fixtures** — is in [CONTRIBUTING.md](CONTRIBUTING.md). By contributing you agree your work is MIT-licensed.
 
 ## License
 
