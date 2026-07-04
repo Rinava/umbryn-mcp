@@ -1,0 +1,198 @@
+"""Generate a fully-synthetic, labeled PHI/PII corpus.
+
+Every identifier here is randomly generated (valid check digits where they exist)
+and every label is recorded by *construction*, so the gold spans are exact and no
+real PHI is ever involved. Negative distractors — numbers that look like
+identifiers but aren't (failed checksums, order numbers, ZIP codes, dates) — are
+woven in as unlabeled text to measure precision honestly.
+
+Deterministic: a fixed seed means the committed ``corpus.jsonl`` is reproducible.
+
+Usage:
+    python eval/generate_corpus.py            # writes eval/corpus.jsonl
+    python eval/generate_corpus.py --n 300    # more documents
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import random
+import string
+from pathlib import Path
+
+from phi_mcp import entities
+
+_MBI_L = "ACDEFGHJKMNPQRTUVWXY"
+_MBI_AN = _MBI_L + string.digits
+
+
+# --- valid-identifier generators -------------------------------------------
+def _npi_check(base9: str) -> str:
+    s = "80840" + base9
+    total = 0
+    for i, ch in enumerate(reversed(s)):
+        d = int(ch)
+        if i % 2 == 0:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    return str((10 - (total % 10)) % 10)
+
+
+def make_npi(rng: random.Random) -> str:
+    base = str(rng.randint(1, 2)) + "".join(str(rng.randint(0, 9)) for _ in range(8))
+    return base + _npi_check(base)
+
+
+def make_dea(rng: random.Random) -> str:
+    letters = rng.choice("ABCFGM") + rng.choice(string.ascii_uppercase)
+    d = [rng.randint(0, 9) for _ in range(6)]
+    chk = (d[0] + d[2] + d[4] + 2 * (d[1] + d[3] + d[5])) % 10
+    return letters + "".join(map(str, d)) + str(chk)
+
+
+def make_mbi(rng: random.Random) -> str:
+    return "".join(
+        [
+            str(rng.randint(1, 9)),
+            rng.choice(_MBI_L),
+            rng.choice(_MBI_AN),
+            str(rng.randint(0, 9)),
+            rng.choice(_MBI_L),
+            rng.choice(_MBI_AN),
+            str(rng.randint(0, 9)),
+            rng.choice(_MBI_L),
+            rng.choice(_MBI_L),
+            str(rng.randint(0, 9)),
+            str(rng.randint(0, 9)),
+        ]
+    )
+
+
+def make_ssn(rng: random.Random) -> str:
+    area = rng.randint(1, 899)
+    while area == 666:
+        area = rng.randint(1, 899)
+    return f"{area:03d}-{rng.randint(1, 99):02d}-{rng.randint(1, 9999):04d}"
+
+
+def make_cc(rng: random.Random) -> str:
+    digits = [4] + [rng.randint(0, 9) for _ in range(14)]
+    total = 0
+    for i, d in enumerate(reversed([*digits, 0])):
+        if i % 2 == 1:
+            d *= 2
+            if d > 9:
+                d -= 9
+        total += d
+    digits.append((10 - (total % 10)) % 10)
+    s = "".join(map(str, digits))
+    return " ".join(s[i : i + 4] for i in range(0, 16, 4))
+
+
+def make_phone(rng: random.Random) -> str:
+    return f"{rng.randint(200, 999)}-{rng.randint(200, 999)}-{rng.randint(1000, 9999)}"
+
+
+def make_email(rng: random.Random) -> str:
+    first = rng.choice(["alex", "sam", "jordan", "casey", "riley", "morgan"])
+    last = rng.choice(["ng", "reyes", "khan", "obrien", "diaz", "park"])
+    dom = rng.choice(["example.com", "clinic.org", "health.net"])
+    return f"{first}.{last}@{dom}"
+
+
+def make_ip(rng: random.Random) -> str:
+    return ".".join(str(rng.randint(1, 254)) for _ in range(4))
+
+
+def make_mrn(rng: random.Random) -> str:
+    return str(rng.randint(100000, 9999999))
+
+
+def make_clia(rng: random.Random) -> str:
+    return f"{rng.randint(10, 99)}D{rng.randint(1000000, 9999999)}"
+
+
+# --- a document builder that records exact spans ---------------------------
+class _Doc:
+    def __init__(self) -> None:
+        self.parts: list[str] = []
+        self.ents: list[dict] = []
+        self.pos = 0
+
+    def lit(self, text: str) -> _Doc:
+        self.parts.append(text)
+        self.pos += len(text)
+        return self
+
+    def ent(self, entity_type: str, value: str) -> _Doc:
+        start = self.pos
+        self.parts.append(value)
+        self.pos += len(value)
+        self.ents.append({"entity_type": entity_type, "start": start, "end": self.pos})
+        return self
+
+    def render(self) -> dict:
+        return {"text": "".join(self.parts), "entities": self.ents}
+
+
+# Negative distractors: look-alikes that must NOT be flagged.
+def _distractor(rng: random.Random) -> str:
+    return rng.choice(
+        [
+            f"order #{rng.randint(1000000000, 1999999999)}",  # 10 digits, fails NPI checksum
+            f"ZIP {rng.randint(10000, 99999)}",
+            f"seen on {rng.randint(2020, 2025)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}",
+            f"room {rng.randint(100, 999)}",
+            f"dose {rng.randint(5, 500)} mg",
+        ]
+    )
+
+
+def _document(rng: random.Random) -> dict:
+    d = _Doc()
+    d.lit("Patient seen by provider ").ent(entities.NPI, make_npi(rng))
+    d.lit(". MRN: ").ent(entities.MEDICAL_RECORD_NUMBER, make_mrn(rng))
+    d.lit(f". {_distractor(rng)}. ")
+    if rng.random() < 0.7:
+        d.lit("SSN ").ent(entities.US_SSN, make_ssn(rng)).lit(". ")
+    if rng.random() < 0.6:
+        d.lit("Medicare MBI ").ent(entities.MEDICARE_BENEFICIARY_ID, make_mbi(rng)).lit(". ")
+    if rng.random() < 0.5:
+        d.lit("Prescriber DEA ").ent(entities.DEA_NUMBER, make_dea(rng)).lit(". ")
+    if rng.random() < 0.5:
+        d.lit("Lab CLIA ").ent(entities.CLIA_NUMBER, make_clia(rng)).lit(". ")
+    if rng.random() < 0.7:
+        d.lit("Contact ").ent(entities.EMAIL_ADDRESS, make_email(rng))
+        d.lit(" or phone ").ent(entities.PHONE_NUMBER, make_phone(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("Card on file ").ent(entities.CREDIT_CARD, make_cc(rng)).lit(". ")
+    if rng.random() < 0.3:
+        d.lit("Portal IP ").ent(entities.IP_ADDRESS, make_ip(rng)).lit(". ")
+    d.lit(f"{_distractor(rng)}.")
+    return d.render()
+
+
+def generate(n: int, seed: int = 20260703) -> list[dict]:
+    rng = random.Random(seed)
+    return [_document(rng) for _ in range(n)]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--n", type=int, default=200, help="number of documents")
+    parser.add_argument("--out", type=Path, default=Path(__file__).parent / "corpus.jsonl")
+    args = parser.parse_args()
+
+    docs = generate(args.n)
+    with args.out.open("w", encoding="utf-8") as fh:
+        for doc in docs:
+            fh.write(json.dumps(doc) + "\n")
+    n_ents = sum(len(d["entities"]) for d in docs)
+    print(f"wrote {len(docs)} documents, {n_ents} labeled entities -> {args.out}")
+
+
+if __name__ == "__main__":
+    main()

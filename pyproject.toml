@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "phi-redact-mcp"
+version = "0.1.0"
+description = "Fail-closed MCP server that redacts PII/PHI from text before it reaches an LLM — self-hosted, no egress, HIPAA-aware."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Lara Mateo" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "llm",
+    "pii",
+    "pii-redaction",
+    "phi",
+    "de-identification",
+    "redaction",
+    "anonymization",
+    "healthcare",
+    "hipaa",
+    "privacy",
+    "nlp",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries",
+    "Typing :: Typed",
+]
+dependencies = [
+    "mcp>=1.27,<2",
+]
+
+[project.optional-dependencies]
+# Adds statistical NER (PERSON/LOCATION) via Microsoft Presidio + spaCy.
+# Heavier; needs a spaCy model (`python -m spacy download en_core_web_lg`).
+presidio = [
+    "presidio-analyzer>=2.2",
+    "presidio-anonymizer>=2.2",
+    "spacy>=3.8.2",
+]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "hypothesis>=6",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[project.scripts]
+phi-redact-mcp = "phi_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/Rinava/phi-mcp"
+Repository = "https://github.com/Rinava/phi-mcp"
+Issues = "https://github.com/Rinava/phi-mcp/issues"
+Changelog = "https://github.com/Rinava/phi-mcp/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/phi_mcp"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+# The fast, default suite: everything except the slow real-Presidio smoke tests.
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["phi_mcp"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "raise NotImplementedError"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "C4", "BLE", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+packages = ["phi_mcp"]
+strict = true
+
+# Presidio is an optional dependency without type stubs; don't fail typing on it.
+[[tool.mypy.overrides]]
+module = ["presidio_analyzer.*"]
+ignore_missing_imports = true

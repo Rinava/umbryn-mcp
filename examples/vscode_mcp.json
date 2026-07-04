@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "phi-redact": {
+      "type": "stdio",
+      "command": "phi-redact-mcp"
+    }
+  }
+}

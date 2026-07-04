@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "phi-redact": {
+      "command": "phi-redact-mcp"
+    }
+  }
+}

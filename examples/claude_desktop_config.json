@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "phi-redact": {
+      "command": "phi-redact-mcp",
+      "env": {
+        "PHI_MCP_ENGINE": "auto",
+        "PHI_MCP_MIN_CONFIDENCE": "0.5"
+      }
+    }
+  }
+}

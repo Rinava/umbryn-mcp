@@ -1,0 +1,49 @@
+name: 🐛 Bug report
+description: Something isn't working as documented
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report! **⚠️ Never paste real PHI or PII here.** Reproduce
+        with synthetic/invented values only — this is a public issue tracker.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what actually occurred?
+      placeholder: "redact() returned text for input X, but I expected it to fail closed…"
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction (synthetic input only)
+      description: Minimal steps or code. Use made-up values.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: phi-redact-mcp version
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Engine
+      options: ["regex (default)", "presidio", "auto", "not sure"]
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      placeholder: "Claude Desktop / Cursor / custom / N/A (calling the library directly)"
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      placeholder: "3.12"
