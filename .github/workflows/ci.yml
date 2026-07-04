@@ -47,3 +47,22 @@ jobs:
 
       - name: Detection quality gate
         run: python eval/run_eval.py
+
+  presidio:
+    name: presidio engine (py3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install with the Presidio extra
+        run: |
+          pip install -e ".[dev,presidio]"
+          python -m spacy download en_core_web_sm
+
+      - name: Presidio integration smoke test
+        run: pytest tests_integration/test_presidio_smoke.py -v

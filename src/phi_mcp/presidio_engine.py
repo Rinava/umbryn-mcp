@@ -40,12 +40,7 @@ class PresidioEngine:
 
     def __init__(self, spacy_model: str = "en_core_web_lg", language: str = "en") -> None:
         try:
-            from presidio_analyzer import (
-                AnalyzerEngine,
-                Pattern,
-                PatternRecognizer,
-                RecognizerRegistry,
-            )
+            from presidio_analyzer import AnalyzerEngine, Pattern, PatternRecognizer
             from presidio_analyzer.nlp_engine import NlpEngineProvider
         except ImportError as exc:  # pragma: no cover - exercised only without presidio
             raise ImportError(_INSTALL_HINT) from exc
@@ -59,12 +54,13 @@ class PresidioEngine:
             }
         ).create_engine()
 
-        registry = RecognizerRegistry()
-        registry.load_predefined_recognizers(languages=[language], nlp_engine=nlp_engine)
+        # Let AnalyzerEngine build its default registry (all predefined
+        # recognizers, including the US ones we rely on: US_NPI, US_MBI, US_SSN,
+        # MEDICAL_LICENSE), then layer on the identifiers Presidio doesn't ship.
+        analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=[language])
 
-        # Custom recognizers for identifiers Presidio doesn't ship. Low base
-        # score + context words; Presidio's enhancer lifts them near a trigger.
-        registry.add_recognizer(
+        # Low base score + context words; Presidio's enhancer lifts them near a trigger.
+        analyzer.registry.add_recognizer(
             PatternRecognizer(
                 supported_entity=MEDICAL_RECORD_NUMBER,
                 name="MrnRecognizer",
@@ -73,7 +69,7 @@ class PresidioEngine:
                 supported_language=language,
             )
         )
-        registry.add_recognizer(
+        analyzer.registry.add_recognizer(
             PatternRecognizer(
                 supported_entity=CLIA_NUMBER,
                 name="CliaRecognizer",
@@ -83,11 +79,7 @@ class PresidioEngine:
             )
         )
 
-        self._analyzer = AnalyzerEngine(
-            registry=registry,
-            nlp_engine=nlp_engine,
-            supported_languages=[language],
-        )
+        self._analyzer = analyzer
 
     def detect(self, text: str) -> list[Entity]:
         results = self._analyzer.analyze(text=text, language=self._language, score_threshold=0.0)
