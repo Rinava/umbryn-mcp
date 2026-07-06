@@ -7,7 +7,7 @@ credit card, IP, URL) and the checksum/structure-based clinical identifiers
 
 What it deliberately does *not* do is name and address (``PERSON``/``LOCATION``)
 detection, which needs statistical NER — install the optional Presidio engine
-(``pip install "phi-redact-mcp[presidio]"``) for that. Keeping the default engine
+(``pip install "umbryn-mcp[presidio]"``) for that. Keeping the default engine
 dependency-free is what makes the "runs fully inside your infrastructure, no
 egress" guarantee trivial to audit.
 """
@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import re
 
-from phi_mcp.recognizers import (
+from umbryn_mcp.recognizers import (
     CONTEXT_BOOST,
     CONTEXT_FLOOR,
     CONTEXT_WINDOW_AFTER,
@@ -24,7 +24,7 @@ from phi_mcp.recognizers import (
     DEFAULT_RECOGNIZERS,
     Recognizer,
 )
-from phi_mcp.types import Entity
+from umbryn_mcp.types import Entity
 
 
 class RegexEngine:
@@ -32,7 +32,7 @@ class RegexEngine:
 
     Args:
         recognizers: rule set to run; defaults to
-            :data:`~phi_mcp.recognizers.DEFAULT_RECOGNIZERS`.
+            :data:`~umbryn_mcp.recognizers.DEFAULT_RECOGNIZERS`.
     """
 
     name = "regex"

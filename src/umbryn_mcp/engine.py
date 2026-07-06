@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from phi_mcp.types import Entity
+from umbryn_mcp.types import Entity
 
 
 @runtime_checkable

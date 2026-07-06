@@ -1,8 +1,8 @@
 """The MCP server: exposes redact / restore / detect over stdio.
 
 This layer is deliberately thin. All the logic — and the fail-closed guarantee —
-lives in :class:`~phi_mcp.redactor.Redactor`; the server just translates between
-MCP tool calls and the core, mapping every :class:`~phi_mcp.errors.PhiRedactionError`
+lives in :class:`~umbryn_mcp.redactor.Redactor`; the server just translates between
+MCP tool calls and the core, mapping every :class:`~umbryn_mcp.errors.PhiRedactionError`
 to an MCP tool error so the client sees ``isError`` and *never* a partial or
 unredacted result.
 """
@@ -15,13 +15,13 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from pydantic import BaseModel, Field
 
-from phi_mcp.errors import PhiRedactionError
-from phi_mcp.factory import build_redactor
-from phi_mcp.redactor import Redactor
-from phi_mcp.types import Entity
+from umbryn_mcp.errors import PhiRedactionError
+from umbryn_mcp.factory import build_redactor
+from umbryn_mcp.redactor import Redactor
+from umbryn_mcp.types import Entity
 
 _INSTRUCTIONS = """\
-phi-redact-mcp keeps PII/PHI out of anything downstream of this boundary.
+umbryn-mcp keeps PII/PHI out of anything downstream of this boundary.
 
 - `redact` returns scrubbed text plus a `token_map`. Send only `redacted_text`
   to the model; keep `token_map` locally and NEVER pass it to the model — it
@@ -96,7 +96,7 @@ def create_server(redactor: Redactor | None = None) -> FastMCP:
     """Build the FastMCP server. Inject a ``redactor`` in tests; otherwise one is
     built from the environment."""
     redactor = redactor or build_redactor()
-    mcp = FastMCP("phi-redact", instructions=_INSTRUCTIONS)
+    mcp = FastMCP("umbryn-mcp", instructions=_INSTRUCTIONS)
 
     @mcp.tool(
         title="Redact PHI/PII",

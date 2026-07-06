@@ -1,8 +1,8 @@
 {
   "servers": {
-    "phi-redact": {
+    "umbryn-mcp": {
       "type": "stdio",
-      "command": "phi-redact-mcp"
+      "command": "umbryn-mcp"
     }
   }
 }

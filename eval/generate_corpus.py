@@ -21,8 +21,8 @@ import random
 import string
 from pathlib import Path
 
-from phi_mcp import entities
-from phi_mcp.checksums import iban_is_valid
+from umbryn_mcp import entities
+from umbryn_mcp.checksums import iban_is_valid
 
 _MBI_L = "ACDEFGHJKMNPQRTUVWXY"
 _MBI_AN = _MBI_L + string.digits

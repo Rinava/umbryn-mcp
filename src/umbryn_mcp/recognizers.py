@@ -24,7 +24,7 @@ import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 
-from phi_mcp import checksums, entities
+from umbryn_mcp import checksums, entities
 
 # Context-boost constants, matching Presidio's defaults.
 CONTEXT_BOOST = 0.35
@@ -42,7 +42,7 @@ class Recognizer:
     """A single detection rule.
 
     Args:
-        entity_type: canonical entity name (see :mod:`phi_mcp.entities`).
+        entity_type: canonical entity name (see :mod:`umbryn_mcp.entities`).
         regex: the pattern. If ``group`` is non-zero, only that capture group's
             span is reported (used to anchor on context words without redacting
             them).

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from phi_mcp.config import Config
-from phi_mcp.factory import build_engine, build_redactor
-from phi_mcp.regex_engine import RegexEngine
+from umbryn_mcp.config import Config
+from umbryn_mcp.factory import build_engine, build_redactor
+from umbryn_mcp.regex_engine import RegexEngine
 
 
 def test_defaults() -> None:
@@ -18,10 +18,10 @@ def test_defaults() -> None:
 def test_env_overrides() -> None:
     cfg = Config.from_env(
         {
-            "PHI_MCP_ENGINE": "regex",
-            "PHI_MCP_MIN_CONFIDENCE": "0.7",
-            "PHI_MCP_DETECTION_FLOOR": "0.2",
-            "PHI_MCP_MAX_INPUT_CHARS": "500",
+            "UMBRYN_ENGINE": "regex",
+            "UMBRYN_MIN_CONFIDENCE": "0.7",
+            "UMBRYN_DETECTION_FLOOR": "0.2",
+            "UMBRYN_MAX_INPUT_CHARS": "500",
         }
     )
     assert cfg.engine == "regex"
@@ -33,9 +33,9 @@ def test_env_overrides() -> None:
 @pytest.mark.parametrize(
     "env",
     [
-        {"PHI_MCP_ENGINE": "banana"},
-        {"PHI_MCP_MIN_CONFIDENCE": "not-a-number"},
-        {"PHI_MCP_MAX_INPUT_CHARS": "1.5"},
+        {"UMBRYN_ENGINE": "banana"},
+        {"UMBRYN_MIN_CONFIDENCE": "not-a-number"},
+        {"UMBRYN_MAX_INPUT_CHARS": "1.5"},
     ],
 )
 def test_invalid_env_rejected(env: dict[str, str]) -> None:

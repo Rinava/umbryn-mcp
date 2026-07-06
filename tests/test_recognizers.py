@@ -6,9 +6,9 @@ import time
 
 import pytest
 
-from phi_mcp import entities
-from phi_mcp.checksums import dea_is_valid, iban_is_valid, luhn_is_valid, npi_is_valid
-from phi_mcp.regex_engine import RegexEngine
+from umbryn_mcp import entities
+from umbryn_mcp.checksums import dea_is_valid, iban_is_valid, luhn_is_valid, npi_is_valid
+from umbryn_mcp.regex_engine import RegexEngine
 
 
 # --- Check-digit validators -------------------------------------------------

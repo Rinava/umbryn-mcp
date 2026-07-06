@@ -1,17 +1,17 @@
-<!-- mcp-name: io.github.rinava/phi-mcp -->
+<!-- mcp-name: io.github.rinava/umbryn-mcp -->
 
-# phi-redact-mcp
+# umbryn-mcp
 
 **An MCP server that redacts PII/PHI from text before it ever reaches an LLM — self-hosted, fail-closed, and HIPAA-aware.**
 
-[![PyPI version](https://img.shields.io/pypi/v/phi-redact-mcp.svg)](https://pypi.org/project/phi-redact-mcp/)
-[![Tests](https://img.shields.io/github/actions/workflow/status/Rinava/phi-mcp/ci.yml?branch=main&label=tests)](https://github.com/Rinava/phi-mcp/actions/workflows/ci.yml)
-[![Python versions](https://img.shields.io/pypi/pyversions/phi-redact-mcp.svg)](https://pypi.org/project/phi-redact-mcp/)
-[![License: MIT](https://img.shields.io/github/license/Rinava/phi-mcp)](LICENSE)
+[![PyPI version](https://img.shields.io/pypi/v/umbryn-mcp.svg)](https://pypi.org/project/umbryn-mcp/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/Rinava/umbryn-mcp/ci.yml?branch=main&label=tests)](https://github.com/Rinava/umbryn-mcp/actions/workflows/ci.yml)
+[![Python versions](https://img.shields.io/pypi/pyversions/umbryn-mcp.svg)](https://pypi.org/project/umbryn-mcp/)
+[![License: MIT](https://img.shields.io/github/license/Rinava/umbryn-mcp)](LICENSE)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-Teams building LLM and agent pipelines in regulated domains have no clean, drop-in way to strip PHI/PII from a payload *before* it crosses into a model provider's infrastructure. `phi-redact-mcp` is that boundary: three MCP tools — `redact`, `restore`, `detect` — that scrub sensitive values into reversible placeholders, run entirely inside infrastructure you control, and **block the request if detection is uncertain instead of leaking data**.
+Teams building LLM and agent pipelines in regulated domains have no clean, drop-in way to strip PHI/PII from a payload *before* it crosses into a model provider's infrastructure. `umbryn-mcp` is that boundary: three MCP tools — `redact`, `restore`, `detect` — that scrub sensitive values into reversible placeholders, run entirely inside infrastructure you control, and **block the request if detection is uncertain instead of leaking data**.
 
 ```text
 redact("Patient MRN: 1234567, provider NPI 1234567893, ssn 078-05-1120, john.doe@example.com")
@@ -34,7 +34,7 @@ Send the redacted text to the model; keep the `token_map` local; call `restore` 
 
 The PHI/PII-redaction MCP niche is real but underserved — the existing options are thin Presidio wrappers with no HIPAA-specific detection and, critically, **no guarantee that a detection failure blocks the request** instead of silently passing raw data through. So teams either roll their own boundary or ship sensitive data to a provider and lean on a BAA to cover it — the design-time mistake that causes real compliance incidents.
 
-| | Naive Presidio wrapper | Regex-in-your-app | Cloud DLP API | **phi-redact-mcp** |
+| | Naive Presidio wrapper | Regex-in-your-app | Cloud DLP API | **umbryn-mcp** |
 |---|:---:|:---:|:---:|:---:|
 | Drop-in MCP tools | sometimes | ❌ | ❌ | ✅ |
 | **Fail-closed** on uncertain detection | ❌ | ❌ | ❌ | ✅ |
@@ -52,12 +52,12 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 - **Fail-closed by construction** — if detection errors *or any detection lands below the confidence threshold*, the call returns a typed error. Uncertainty blocks; it never redacts-what-it-can and passes the rest.
 - **HIPAA-aware detection** — checksum-validated NPI and DEA, position-typed Medicare MBI, context-anchored MRN, CLIA lab IDs, plus standard PII (email, phone, SSN, credit card, IBAN, IP, URL).
 - **Zero-egress, self-hosted** — the default engine is pure regex + checksums with **no network calls and no heavy dependencies**. It installs anywhere Python does.
-- **Optional ML upgrade** — `pip install "phi-redact-mcp[presidio]"` adds Microsoft Presidio + spaCy for `PERSON`/`LOCATION` NER, transparently.
+- **Optional ML upgrade** — `pip install "umbryn-mcp[presidio]"` adds Microsoft Presidio + spaCy for `PERSON`/`LOCATION` NER, transparently.
 - **Reversible & deterministic** — collision-proof typed placeholders make `restore(redact(x)) == x` for *arbitrary* input; same input + config always yields the same output.
 
 ## When to use it (and when not to)
 
-**Reach for `phi-redact-mcp` when:**
+**Reach for `umbryn-mcp` when:**
 
 - You send healthcare, clinical, financial, or user-generated text to a **third-party LLM API** and need PHI/PII kept out of that provider's infrastructure and logs.
 - You're building an **agent or MCP pipeline** in a regulated domain and want a drop-in scrubbing boundary you wire in with one tool call.
@@ -76,18 +76,18 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 ## Quickstart (< 60 seconds)
 
 ```bash
-pip install phi-redact-mcp        # zero heavy deps; runs immediately
+pip install umbryn-mcp        # zero heavy deps; runs immediately
 ```
 
 Then register it with your MCP client.
 
-**Claude Desktop / Claude Code** (`claude_desktop_config.json`, or `claude mcp add phi-redact -- phi-redact-mcp`):
+**Claude Desktop / Claude Code** (`claude_desktop_config.json`, or `claude mcp add umbryn-mcp -- umbryn-mcp`):
 
 ```json
 {
   "mcpServers": {
-    "phi-redact": {
-      "command": "phi-redact-mcp"
+    "umbryn-mcp": {
+      "command": "umbryn-mcp"
     }
   }
 }
@@ -98,11 +98,11 @@ Then register it with your MCP client.
 Want name/address detection too?
 
 ```bash
-pip install "phi-redact-mcp[presidio]"
+pip install "umbryn-mcp[presidio]"
 python -m spacy download en_core_web_lg
 ```
 
-The server auto-detects Presidio and upgrades — no config change needed. (Set `PHI_MCP_ENGINE=regex` to force the dependency-free engine, or `=presidio` to require the ML one.)
+The server auto-detects Presidio and upgrades — no config change needed. (Set `UMBRYN_ENGINE=regex` to force the dependency-free engine, or `=presidio` to require the ML one.)
 
 ## How it works
 
@@ -110,7 +110,7 @@ A tool call comes in over stdio; the `Redactor` core runs the configured detecti
 
 ```mermaid
 flowchart LR
-    A[MCP client<br/>Claude · Cursor · agent] -- redact / restore / detect --> B[phi-redact-mcp<br/>stdio server]
+    A[MCP client<br/>Claude · Cursor · agent] -- redact / restore / detect --> B[umbryn-mcp<br/>stdio server]
     B --> C[Redactor core<br/>fail-closed · reversible]
     C --> D{Detection engine}
     D -->|default, zero deps| E[Regex + checksums]
@@ -158,11 +158,11 @@ All optional; sane defaults mean it runs with zero config. Set via the client's 
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `PHI_MCP_ENGINE` | `auto` | `auto` (Presidio if installed, else regex), `regex`, or `presidio` |
-| `PHI_MCP_MIN_CONFIDENCE` | `0.5` | Trust threshold; detections below it fail closed |
-| `PHI_MCP_DETECTION_FLOOR` | `0.35` | Below this, a signal is treated as noise |
-| `PHI_MCP_MAX_INPUT_CHARS` | `100000` | Reject larger input with a typed error |
-| `PHI_MCP_SPACY_MODEL` | `en_core_web_lg` | spaCy model for the Presidio engine |
+| `UMBRYN_ENGINE` | `auto` | `auto` (Presidio if installed, else regex), `regex`, or `presidio` |
+| `UMBRYN_MIN_CONFIDENCE` | `0.5` | Trust threshold; detections below it fail closed |
+| `UMBRYN_DETECTION_FLOOR` | `0.35` | Below this, a signal is treated as noise |
+| `UMBRYN_MAX_INPUT_CHARS` | `100000` | Reject larger input with a typed error |
+| `UMBRYN_SPACY_MODEL` | `en_core_web_lg` | spaCy model for the Presidio engine |
 
 ## Entity coverage
 
@@ -182,7 +182,7 @@ Detection quality is measured, not asserted — see the [eval harness](eval/). O
 
 ## Scope & honest limitations
 
-**This tool reduces PHI/PII exposure at one boundary. It does not make a system "HIPAA compliant."** Compliance is a property of an entire system and organization — its policies, contracts, access controls, audit posture, and people — not of any single library. Running `phi-redact-mcp` can be *part* of a compliant design, but it is not a certification, a guarantee, or a substitute for a Business Associate Agreement, a risk assessment, or legal counsel.
+**This tool reduces PHI/PII exposure at one boundary. It does not make a system "HIPAA compliant."** Compliance is a property of an entire system and organization — its policies, contracts, access controls, audit posture, and people — not of any single library. Running `umbryn-mcp` can be *part* of a compliant design, but it is not a certification, a guarantee, or a substitute for a Business Associate Agreement, a risk assessment, or legal counsel.
 
 Concretely, this project **does not**: guarantee 100% detection (no detector does), de-identify beyond reversible redaction, cover non-text data, or act as a transparent proxy in v1 (redaction is via explicit tool calls you wire in). No detector is perfect — evaluate on your own representative data before relying on it. See [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) for the full boundary, assumptions, and residual risks, and [SECURITY.md](SECURITY.md) to report issues.
 
@@ -190,15 +190,15 @@ Concretely, this project **does not**: guarantee 100% detection (no detector doe
 
 Contributions are very welcome — this is a deliberately friendly place to make your first open-source PR, and the maintainer tries to respond quickly.
 
-**The easiest high-value contribution:** add a detection recognizer for a new identifier (a regex + an optional check-digit validator + a test). The [add-a-recognizer issue form](https://github.com/Rinava/phi-mcp/issues/new?template=add_recognizer.yml) doubles as the spec, and [CONTRIBUTING.md](CONTRIBUTING.md#how-to-add-a-recognizer-the-classic-good-first-issue) walks through the six steps.
+**The easiest high-value contribution:** add a detection recognizer for a new identifier (a regex + an optional check-digit validator + a test). The [add-a-recognizer issue form](https://github.com/Rinava/umbryn-mcp/issues/new?template=add_recognizer.yml) doubles as the spec, and [CONTRIBUTING.md](CONTRIBUTING.md#how-to-add-a-recognizer-the-classic-good-first-issue) walks through the six steps.
 
-Other good ways to help: improve docs, add test cases or example client configs, or pick up something from the [roadmap](ROADMAP.md). Browse [good first issues](https://github.com/Rinava/phi-mcp/contribute) or open an issue to propose something.
+Other good ways to help: improve docs, add test cases or example client configs, or pick up something from the [roadmap](ROADMAP.md). Browse [good first issues](https://github.com/Rinava/umbryn-mcp/contribute) or open an issue to propose something.
 
 ```bash
-git clone https://github.com/Rinava/phi-mcp && cd phi-mcp
+git clone https://github.com/Rinava/umbryn-mcp && cd umbryn-mcp
 pip install -e ".[dev]"
 pytest                 # fast invariant suite (Presidio faked, sub-second)
-ruff check . && mypy src/phi_mcp
+ruff check . && mypy src/umbryn_mcp
 python eval/run_eval.py
 ```
 

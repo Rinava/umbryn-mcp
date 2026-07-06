@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from phi_mcp import (
+from tests.fakes import FakeEngine, make_entities
+from umbryn_mcp import (
     InputTooLargeError,
     InvalidInputError,
     Redactor,
     RestoreError,
 )
-from phi_mcp.types import Entity
-from tests.fakes import FakeEngine, make_entities
+from umbryn_mcp.types import Entity
 
 
 def test_empty_string_roundtrips() -> None:

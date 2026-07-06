@@ -10,6 +10,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **IBAN** detection (`IBAN_CODE`), validated with the mod-97 / ISO 7064 check
   digit, in both the default and Presidio engines.
 
+### Changed
+- **BREAKING — renamed the project** from `phi-redact-mcp` to **`umbryn-mcp`**. The
+  distribution and console script are now `umbryn-mcp` (was `phi-redact-mcp`), the
+  import package is `umbryn_mcp` (was `phi_mcp`), and the environment-variable
+  prefix is `UMBRYN_` (was `PHI_MCP_`). Update MCP client configs, any
+  `import phi_mcp`, and any `PHI_MCP_*` env vars accordingly. The `0.1.0` release
+  remains on PyPI under the old `phi-redact-mcp` name.
+
 ## [0.1.0] - 2026-07-03
 
 Initial release.
@@ -28,11 +36,11 @@ Initial release.
 - Optional `[presidio]` engine adding `PERSON`/`LOCATION` NER via Microsoft
   Presidio + spaCy, with custom MRN/CLIA recognizers and entity-name
   normalization.
-- Environment-based configuration (`PHI_MCP_ENGINE`, `PHI_MCP_MIN_CONFIDENCE`,
-  `PHI_MCP_DETECTION_FLOOR`, `PHI_MCP_MAX_INPUT_CHARS`, `PHI_MCP_SPACY_MODEL`).
+- Environment-based configuration (`UMBRYN_ENGINE`, `UMBRYN_MIN_CONFIDENCE`,
+  `UMBRYN_DETECTION_FLOOR`, `UMBRYN_MAX_INPUT_CHARS`, `UMBRYN_SPACY_MODEL`).
 - Synthetic labeled eval harness with per-entity precision/recall and a quality
   gate; fast invariant test suite; stdio + Presidio integration smoke tests.
 - Docs: architecture, threat model, contributing guide, example client configs.
 
-[Unreleased]: https://github.com/Rinava/phi-mcp/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Rinava/phi-mcp/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Rinava/umbryn-mcp/releases/tag/v0.1.0

@@ -1,13 +1,13 @@
 # Security Policy
 
-`phi-redact-mcp` sits on a data-privacy boundary, so security reports are taken
+`umbryn-mcp` sits on a data-privacy boundary, so security reports are taken
 seriously and handled with priority.
 
 ## Reporting a vulnerability
 
 **Please do not open a public issue for security vulnerabilities.**
 
-Report privately using **[GitHub Private Vulnerability Reporting](https://github.com/Rinava/phi-mcp/security/advisories/new)**
+Report privately using **[GitHub Private Vulnerability Reporting](https://github.com/Rinava/umbryn-mcp/security/advisories/new)**
 (Security → Report a vulnerability). If that is unavailable, email
 **laramateoco@gmail.com** with details.
 

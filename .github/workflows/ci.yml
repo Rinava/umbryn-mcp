@@ -37,10 +37,10 @@ jobs:
           ruff format --check .
 
       - name: Type check (mypy)
-        run: mypy src/phi_mcp
+        run: mypy src/umbryn_mcp
 
       - name: Fast test suite
-        run: pytest --cov=phi_mcp --cov-report=term-missing
+        run: pytest --cov=umbryn_mcp --cov-report=term-missing
 
       - name: Transport smoke test (stdio)
         run: pytest tests_integration/test_stdio_smoke.py

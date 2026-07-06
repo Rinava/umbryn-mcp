@@ -1,11 +1,11 @@
 # Client configuration examples
 
-`phi-redact-mcp` is a stdio MCP server: point your client at the installed
-`phi-redact-mcp` command. Install it first:
+`umbryn-mcp` is a stdio MCP server: point your client at the installed
+`umbryn-mcp` command. Install it first:
 
 ```bash
-pip install phi-redact-mcp
-# or, isolated, run without installing:  uvx phi-redact-mcp
+pip install umbryn-mcp
+# or, isolated, run without installing:  uvx umbryn-mcp
 ```
 
 Then use one of the configs below. All optional tuning is via `env` (see the
@@ -17,7 +17,7 @@ Then use one of the configs below. All optional tuning is via `env` (see the
 Or from the CLI:
 
 ```bash
-claude mcp add phi-redact -- phi-redact-mcp
+claude mcp add umbryn-mcp -- umbryn-mcp
 ```
 
 ## Cursor

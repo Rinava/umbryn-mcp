@@ -4,7 +4,7 @@ Division of labour: **Presidio contributes only the entities regex can't** —
 ``PERSON`` and ``LOCATION`` (spaCy NER), ``NRP`` (nationality/religion/politics),
 and ``DATE_TIME``. Every structured identifier (NPI, DEA, MBI, MRN, CLIA, SSN,
 email, phone, credit card, IP, URL) comes from the same checksum-validated
-:class:`~phi_mcp.regex_engine.RegexEngine` the default engine uses.
+:class:`~umbryn_mcp.regex_engine.RegexEngine` the default engine uses.
 
 Why not lean on Presidio's own identifier recognizers? Because they aren't
 check-digit validated and lose Presidio's overlap conflict-resolution to broader
@@ -19,14 +19,14 @@ install raises a clear, actionable :class:`ImportError`.
 
 from __future__ import annotations
 
-from phi_mcp.regex_engine import RegexEngine
-from phi_mcp.types import Entity
+from umbryn_mcp.regex_engine import RegexEngine
+from umbryn_mcp.types import Entity
 
 _INSTALL_HINT = (
     "The Presidio engine requires extra dependencies. Install them with:\n"
-    '    pip install "phi-redact-mcp[presidio]"\n'
+    '    pip install "umbryn-mcp[presidio]"\n'
     "    python -m spacy download en_core_web_lg\n"
-    "Or set PHI_MCP_ENGINE=regex to use the dependency-free default engine."
+    "Or set UMBRYN_ENGINE=regex to use the dependency-free default engine."
 )
 
 

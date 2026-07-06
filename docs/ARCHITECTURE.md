@@ -1,6 +1,6 @@
 # Architecture
 
-`phi-redact-mcp` is a thin MCP transport wrapped around a dependency-free
+`umbryn-mcp` is a thin MCP transport wrapped around a dependency-free
 redaction core. The design goal is that the interesting logic — and the
 fail-closed guarantee — lives in plain Python that can be tested in
 microseconds and embedded anywhere (a proxy, a batch job, another server), with
@@ -64,7 +64,7 @@ detections in — the same input always produces the same redaction.
 Implementations must be deterministic and must not egress to third parties at
 detection time. Two ship today:
 
-- **`RegexEngine`** (default) — runs [`recognizers.py`](../src/phi_mcp/recognizers.py),
+- **`RegexEngine`** (default) — runs [`recognizers.py`](../src/umbryn_mcp/recognizers.py),
   a table of regex + score + optional context words + optional check-digit
   validator. Zero heavy dependencies, no network, installs everywhere.
 - **`PresidioEngine`** (optional) — wraps Microsoft Presidio's `AnalyzerEngine`,
@@ -72,7 +72,7 @@ detection time. Two ship today:
   normalizes Presidio's entity names (`US_NPI` → `NPI`, …) to our taxonomy.
 
 Both emit the same canonical entity types (see
-[`entities.py`](../src/phi_mcp/entities.py)), so placeholders, config, and the
+[`entities.py`](../src/umbryn_mcp/entities.py)), so placeholders, config, and the
 eval harness are engine-agnostic.
 
 ## Testing strategy

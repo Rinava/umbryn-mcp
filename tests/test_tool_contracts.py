@@ -15,9 +15,9 @@ import pytest
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 
-from phi_mcp import Redactor
-from phi_mcp.server import create_server
 from tests.fakes import FakeEngine, make_entities
+from umbryn_mcp import Redactor
+from umbryn_mcp.server import create_server
 
 TEXT = "ping 555-867-5309 now"
 
