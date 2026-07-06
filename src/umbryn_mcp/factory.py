@@ -44,11 +44,13 @@ def build_engine(config: Config) -> DetectionEngine:
 
 
 def build_redactor(config: Config | None = None) -> Redactor:
-    """Build a :class:`Redactor` from ``config`` (or the environment)."""
-    config = config or Config.from_env()
+    """Build a :class:`Redactor` from ``config`` (or the config file + environment)."""
+    config = config or Config.load()
     return Redactor(
         build_engine(config),
         min_confidence=config.min_confidence,
         detection_floor=config.detection_floor,
         max_input_chars=config.max_input_chars,
+        entity_thresholds=config.entity_thresholds,
+        disabled_entities=config.disabled_entities,
     )
