@@ -13,6 +13,7 @@ and the Luhn spec.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 _DIGITS = re.compile(r"\d")
 
@@ -88,3 +89,36 @@ def iban_is_valid(iban: str) -> bool:
     rearranged = iban[4:] + iban[:4]
     digits = "".join(ch if ch.isdigit() else str(ord(ch) - 55) for ch in rearranged)
     return int(digits) % 97 == 1
+
+
+def nhs_is_valid(nhs: str) -> bool:
+    """Validate a UK NHS number (10 digits, mod-11 check digit).
+
+    The first nine digits are weighted 10, 9, ... 2; the weighted sum mod 11
+    gives a remainder ``r`` and the check digit is ``11 - r`` (a result of 11
+    means 0). A result of 10 is not a valid NHS number. Non-digits (the printed
+    ``3 3 4`` grouping) are ignored.
+    """
+    digits = [int(c) for c in _DIGITS.findall(nhs)]
+    if len(digits) != 10:
+        return False
+    total = sum(digits[i] * (10 - i) for i in range(9))
+    check = 11 - (total % 11)
+    if check == 11:
+        check = 0
+    if check == 10:
+        return False
+    return check == digits[9]
+
+
+#: Validators a custom recognizer may reference *by name* from the config file.
+#: Config names a validator with a string, never supplies a callable, so a
+#: config file can attach a check digit to a custom recognizer without being able
+#: to inject arbitrary code.
+VALIDATORS: dict[str, Callable[[str], bool]] = {
+    "luhn": luhn_is_valid,
+    "npi": npi_is_valid,
+    "dea": dea_is_valid,
+    "iban": iban_is_valid,
+    "nhs": nhs_is_valid,
+}

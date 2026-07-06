@@ -1,0 +1,28 @@
+{
+  "engine": "auto",
+  "min_confidence": 0.5,
+  "detection_floor": 0.35,
+  "audit_log": true,
+  "entity_thresholds": {
+    "PHONE_NUMBER": 0.7,
+    "IP_ADDRESS": 0.9
+  },
+  "disabled_entities": [],
+  "recognizers": [
+    {
+      "entity_type": "EMPLOYEE_ID",
+      "regex": "\\bEMP-\\d{6}\\b",
+      "base_score": 0.85,
+      "context": ["employee", "badge", "staff"],
+      "context_required": false
+    },
+    {
+      "entity_type": "LOYALTY_CARD",
+      "regex": "\\b\\d{16}\\b",
+      "base_score": 0.8,
+      "context": ["loyalty", "rewards", "member"],
+      "context_required": true,
+      "validator": "luhn"
+    }
+  ]
+}

@@ -163,6 +163,40 @@ All optional; sane defaults mean it runs with zero config. Set via the client's 
 | `UMBRYN_DETECTION_FLOOR` | `0.35` | Below this, a signal is treated as noise |
 | `UMBRYN_MAX_INPUT_CHARS` | `100000` | Reject larger input with a typed error |
 | `UMBRYN_SPACY_MODEL` | `en_core_web_lg` | spaCy model for the Presidio engine |
+| `UMBRYN_AUDIT_LOG` | `false` | Emit a structured audit record per `redact` call (counts and types only) |
+| `UMBRYN_CONFIG` | *(unset)* | Path to a JSON config file (below) |
+
+### Config file
+
+For settings that don't fit a flat environment variable, point `UMBRYN_CONFIG` at a JSON file. Environment variables still win over the file for the scalar values above, so you can ship one file and tweak per launch. A malformed file (bad JSON, unknown threshold, un-compilable regex) fails **closed** at startup rather than degrading silently.
+
+```jsonc
+{
+  // Per-entity trust thresholds override min_confidence for that type.
+  "entity_thresholds": { "PHONE_NUMBER": 0.7, "IP_ADDRESS": 0.9 },
+
+  // Entity types to drop entirely — never detected, never redacted.
+  // (A privacy trade-off you're opting into: a disabled type can leak.)
+  "disabled_entities": ["URL"],
+
+  // Your own recognizers, no fork required. `validator` names a built-in
+  // check-digit function (luhn, npi, dea, iban, nhs) — config supplies data,
+  // never code.
+  "recognizers": [
+    {
+      "entity_type": "EMPLOYEE_ID",
+      "regex": "\\bEMP-\\d{6}\\b",
+      "base_score": 0.85,
+      "context": ["employee", "badge"],
+      "context_required": false
+    }
+  ],
+
+  "audit_log": true
+}
+```
+
+A ready-to-copy example lives at [`examples/umbryn_config.json`](examples/umbryn_config.json).
 
 ## Entity coverage
 
@@ -173,10 +207,16 @@ All optional; sane defaults mean it runs with zero config. Set via the client's 
 | **DEA** (check digit) | ✅ | ✅ |
 | **Medicare MBI** (position-typed) | ✅ | ✅ |
 | **MRN** (context-anchored) | ✅ | ✅ |
+| **Medicare HICN** (SSN + beneficiary code) | ✅ | ✅ |
 | **CLIA** lab number | ✅ | ✅ |
+| **US ITIN** (9XX-range structure) | ✅ | ✅ |
+| **UK NHS number** (mod-11 check) | ✅ | ✅ |
+| **Canadian SIN** (Luhn check) | ✅ | ✅ |
+| **US driver's license** (context-anchored) | ✅ | ✅ |
 | **IBAN** (mod-97 / ISO 7064 check) | ✅ | ✅ |
 | **Person names** | ❌ | ✅ (spaCy NER) |
 | **Addresses / locations** | ❌ | ✅ (spaCy NER) |
+| **Custom recognizers** (your regex + check digit, via config) | ✅ | ✅ |
 
 Detection quality is measured, not asserted — see the [eval harness](eval/). On the synthetic corpus the default engine clears the project bar (recall ≥ 0.90, precision ≥ 0.80) on the HIPAA identifier set.
 

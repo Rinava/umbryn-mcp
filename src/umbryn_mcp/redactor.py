@@ -30,8 +30,11 @@ then position), so output is stable across runs.
 
 from __future__ import annotations
 
+import logging
 import re
+from collections.abc import Iterable, Mapping
 
+from umbryn_mcp.audit import AuditSink
 from umbryn_mcp.engine import DetectionEngine
 from umbryn_mcp.errors import (
     DetectionError,
@@ -41,6 +44,8 @@ from umbryn_mcp.errors import (
     RestoreError,
 )
 from umbryn_mcp.types import DetectionResult, Entity, RedactionResult
+
+logger = logging.getLogger("umbryn_mcp")
 
 DEFAULT_MIN_CONFIDENCE = 0.5
 DEFAULT_DETECTION_FLOOR = 0.35
@@ -60,6 +65,13 @@ class Redactor:
             as noise and ignored everywhere.
         max_input_chars: hard input-size limit; larger input is rejected with a
             typed error rather than processed slowly or partially.
+        entity_thresholds: per-entity-type trust thresholds that override
+            ``min_confidence`` for that type. Each must satisfy
+            ``detection_floor <= threshold <= 1``.
+        disabled_entities: entity types to drop entirely — never detected,
+            never redacted, never surfaced by :meth:`detect`.
+        audit: optional sink for structured audit records (redaction counts and
+            block reasons — never raw values). ``None`` disables auditing.
     """
 
     def __init__(
@@ -69,6 +81,9 @@ class Redactor:
         min_confidence: float = DEFAULT_MIN_CONFIDENCE,
         detection_floor: float = DEFAULT_DETECTION_FLOOR,
         max_input_chars: int = DEFAULT_MAX_INPUT_CHARS,
+        entity_thresholds: Mapping[str, float] | None = None,
+        disabled_entities: frozenset[str] = frozenset(),
+        audit: AuditSink | None = None,
     ) -> None:
         if not 0.0 <= detection_floor <= min_confidence <= 1.0:
             raise ValueError(
@@ -77,10 +92,20 @@ class Redactor:
             )
         if max_input_chars <= 0:
             raise ValueError("max_input_chars must be positive")
+        entity_thresholds = dict(entity_thresholds or {})
+        for entity_type, threshold in entity_thresholds.items():
+            if not detection_floor <= threshold <= 1.0:
+                raise ValueError(
+                    f"entity threshold for {entity_type!r} must satisfy "
+                    f"detection_floor <= threshold <= 1 (got {threshold})"
+                )
         self._engine = engine
         self.min_confidence = min_confidence
         self.detection_floor = detection_floor
         self.max_input_chars = max_input_chars
+        self.entity_thresholds = entity_thresholds
+        self.disabled_entities = disabled_entities
+        self._audit = audit
 
     # -- public API ---------------------------------------------------------
 
@@ -113,22 +138,44 @@ class Redactor:
         # resolution folds each overlapping cluster into one span, which would
         # silently absorb an uncertain span that overlaps a confident one and
         # skip the block. Any uncertain candidate at all must fail the whole call.
-        candidates = self._run_engine(text)
+        try:
+            candidates = self._run_engine(text)
+        except DetectionError:
+            self._emit_audit("redact_blocked", {"reason": DetectionError.code})
+            raise
 
-        uncertain = [e for e in candidates if e.score < self.min_confidence]
+        uncertain = [e for e in candidates if e.score < self._threshold_for(e.entity_type)]
         if uncertain:
+            self._emit_audit(
+                "redact_blocked",
+                {"reason": LowConfidenceError.code, "entity_counts": _entity_counts(uncertain)},
+            )
             raise LowConfidenceError(
-                f"{len(uncertain)} detection(s) below the confidence threshold "
-                f"{self.min_confidence}; blocking rather than passing raw data through",
+                f"{len(uncertain)} detection(s) below the confidence threshold; "
+                "blocking rather than passing raw data through",
                 details={
                     "min_confidence": self.min_confidence,
                     "uncertain": [
-                        {"entity_type": e.entity_type, "score": e.score} for e in uncertain
+                        {
+                            "entity_type": e.entity_type,
+                            "score": e.score,
+                            "threshold": self._threshold_for(e.entity_type),
+                        }
+                        for e in uncertain
                     ],
                 },
             )
 
-        return self._build_redaction(text, self._resolve_overlaps(candidates, text))
+        result = self._build_redaction(text, self._resolve_overlaps(candidates, text))
+        self._emit_audit(
+            "redact",
+            {
+                "entity_counts": _entity_counts(result.entities),
+                "total": len(result.entities),
+                "input_chars": len(text),
+            },
+        )
+        return result
 
     def restore(self, redacted_text: str, token_map: dict[str, str]) -> str:
         """Invert :meth:`redact`: substitute every placeholder back to its value.
@@ -163,6 +210,22 @@ class Redactor:
 
     # -- internals ----------------------------------------------------------
 
+    def _threshold_for(self, entity_type: str) -> float:
+        """The trust threshold for ``entity_type`` — its per-entity override if
+        one is configured, else the global ``min_confidence``."""
+        return self.entity_thresholds.get(entity_type, self.min_confidence)
+
+    def _emit_audit(self, event: str, fields: dict[str, object]) -> None:
+        """Send one audit record to the sink, if configured. A failing sink is
+        logged and swallowed — audit is observability, and must never turn into a
+        data leak or a spurious block by breaking the redaction path."""
+        if self._audit is None:
+            return
+        try:
+            self._audit(event, fields)
+        except Exception:  # noqa: BLE001 - audit must never break redaction
+            logger.warning("umbryn-mcp: audit sink raised; continuing", exc_info=True)
+
     def _check_input(self, text: str) -> None:
         if not isinstance(text, str):
             raise InvalidInputError("text must be a string")
@@ -190,6 +253,8 @@ class Redactor:
                     f"engine returned an out-of-range span [{entity.start}:{entity.end}] "
                     f"for text of length {len(text)}"
                 )
+            if entity.entity_type in self.disabled_entities:
+                continue
             if entity.score >= self.detection_floor:
                 kept.append(entity)
         return kept
@@ -288,3 +353,12 @@ class Redactor:
             candidate = f"[{entity_type}_{n}_{suffix}]"
         allocated.add(candidate)
         return candidate
+
+
+def _entity_counts(entities: Iterable[Entity]) -> dict[str, int]:
+    """Count entities by type — the audit-safe summary of a detection set (types
+    and counts only, never the matched values)."""
+    counts: dict[str, int] = {}
+    for entity in entities:
+        counts[entity.entity_type] = counts.get(entity.entity_type, 0) + 1
+    return counts

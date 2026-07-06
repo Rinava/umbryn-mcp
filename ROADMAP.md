@@ -14,14 +14,15 @@ follow contributor interest. Open an issue to discuss before starting something 
 
 ## Next (P1) — fast follow
 
-- **More recognizers** — UK NHS number, ITIN, US passport, insurance member IDs,
-  more international identifiers. *(good first issue — see [CONTRIBUTING](CONTRIBUTING.md))*
-- **Config file** — per-entity thresholds and enabled/disabled entities via a
-  config file, not just env vars.
-- **Custom recognizers at startup** — load user-defined regex + context recognizers
-  from config without code changes.
+- ✅ **Config file** — per-entity thresholds and enabled/disabled entities via a
+  JSON config file, not just env vars.
+- ✅ **Custom recognizers at startup** — load user-defined regex + context
+  recognizers from config without code changes.
+- ✅ **Structured audit log** — counts and types of redactions (never raw values).
+- **More recognizers** — US passport, insurance member IDs, more international
+  identifiers. (ITIN, UK NHS, Canadian SIN, Medicare HICN, and US driver's
+  license have shipped.) *(good first issue — see [CONTRIBUTING](CONTRIBUTING.md))*
 - **Remote transport** — streamable-HTTP transport for hosted/multi-client use.
-- **Structured audit log** — counts and types of redactions (never raw values).
 - **Published benchmark** — precision/recall on a public synthetic PHI corpus in
   the README.
 - **Coverage + release automation** — Codecov badge, tag-triggered PyPI + MCP

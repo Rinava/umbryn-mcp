@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **JSON config file** (`UMBRYN_CONFIG`) as a second configuration surface for
+  the settings that don't fit a flat environment variable. Environment variables
+  still override the file for scalar values. A malformed file fails closed at
+  startup. See [`examples/umbryn_config.json`](examples/umbryn_config.json).
+- **Per-entity trust thresholds** (`entity_thresholds`) that override
+  `min_confidence` for a specific entity type, and **`disabled_entities`** to
+  drop a type entirely (never detected or redacted).
+- **Custom recognizers from config** (`recognizers`): define your own regex +
+  context + optional check digit without forking. A `validator` is named by
+  string against a fixed registry (`luhn`, `npi`, `dea`, `iban`, `nhs`), so a
+  config file supplies data, never code.
+- **Structured audit log** (`UMBRYN_AUDIT_LOG`): one record per `redact` call
+  with redaction counts, types, and block reasons — never the raw values.
+- **New recognizers**: US ITIN (`US_ITIN`), UK NHS number (`UK_NHS_NUMBER`,
+  mod-11), Canadian SIN (`CANADA_SIN`, Luhn), legacy Medicare HICN
+  (`MEDICARE_HICN`), and US driver's license (`US_DRIVERS_LICENSE`).
+
 ## [0.1.2] - 2026-07-06
 
 ### Fixed

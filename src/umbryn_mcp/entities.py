@@ -25,7 +25,14 @@ NPI: Final = "NPI"  # National Provider Identifier (Luhn + 80840)
 DEA_NUMBER: Final = "DEA_NUMBER"  # Drug Enforcement Administration number (checksum)
 MEDICAL_RECORD_NUMBER: Final = "MEDICAL_RECORD_NUMBER"  # MRN, context-gated
 MEDICARE_BENEFICIARY_ID: Final = "MEDICARE_BENEFICIARY_ID"  # MBI, position-typed
+MEDICARE_HICN: Final = "MEDICARE_HICN"  # Legacy Health Insurance Claim Number (SSN + BIC)
 CLIA_NUMBER: Final = "CLIA_NUMBER"  # Clinical lab identifier
+
+# --- Government / taxpayer identifiers ---------------------------------------
+US_ITIN: Final = "US_ITIN"  # Individual Taxpayer Identification Number (9XX-range)
+UK_NHS_NUMBER: Final = "UK_NHS_NUMBER"  # UK National Health Service number (mod-11)
+CANADA_SIN: Final = "CANADA_SIN"  # Canadian Social Insurance Number (Luhn)
+US_DRIVERS_LICENSE: Final = "US_DRIVERS_LICENSE"  # Driver's license, context-anchored
 
 # --- Financial identifiers --------------------------------------------------
 IBAN_CODE: Final = "IBAN_CODE"  # International Bank Account Number (mod-97 / ISO 7064)
