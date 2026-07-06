@@ -7,7 +7,13 @@ import time
 import pytest
 
 from umbryn_mcp import entities
-from umbryn_mcp.checksums import dea_is_valid, iban_is_valid, luhn_is_valid, npi_is_valid
+from umbryn_mcp.checksums import (
+    dea_is_valid,
+    iban_is_valid,
+    luhn_is_valid,
+    nhs_is_valid,
+    npi_is_valid,
+)
 from umbryn_mcp.regex_engine import RegexEngine
 
 
@@ -41,6 +47,17 @@ def test_iban_checksum() -> None:
     assert iban_is_valid("NL02ABNA0123456789")
     assert not iban_is_valid("DE00123456780000001234")
     assert not iban_is_valid("DE94 1234")
+
+
+@pytest.mark.parametrize("nhs", ["9434765919", "4010232137", "943 476 5919"])
+def test_valid_nhs(nhs: str) -> None:
+    assert nhs_is_valid(nhs)
+
+
+@pytest.mark.parametrize("nhs", ["9434765918", "1234567890", "943476591"])
+def test_invalid_nhs(nhs: str) -> None:
+    # 1234567890 exercises the "check digit == 10" -> invalid branch.
+    assert not nhs_is_valid(nhs)
 
 
 # --- RegexEngine detection --------------------------------------------------
@@ -117,3 +134,52 @@ def test_detection_is_deterministic() -> None:
     assert [(e.entity_type, e.start, e.end, e.score) for e in first] == [
         (e.entity_type, e.start, e.end, e.score) for e in second
     ]
+
+
+# --- New identifiers --------------------------------------------------------
+def test_nhs_number_requires_context_and_checksum() -> None:
+    engine = RegexEngine()
+    assert entities.UK_NHS_NUMBER in _types(engine, "NHS number 9434765919")
+    # Right shape, valid checksum, but no NHS context -> not flagged.
+    assert entities.UK_NHS_NUMBER not in _types(engine, "order ref 9434765919 shipped")
+    # In-context but a broken check digit -> not flagged.
+    assert entities.UK_NHS_NUMBER not in _types(engine, "NHS number 9434765918")
+
+
+def test_itin_detected_on_shape_but_only_in_valid_ranges() -> None:
+    engine = RegexEngine()
+    assert entities.US_ITIN in _types(engine, "ITIN 912-70-1234")
+    # Group digits 69 fall in the 66-69 gap that the IRS never issues.
+    assert entities.US_ITIN not in _types(engine, "code 912-69-1234")
+    # A normal SSN (no 9 prefix) is not an ITIN.
+    assert entities.US_ITIN not in _types(engine, "078-05-1120")
+
+
+def test_canadian_sin_requires_context_and_luhn() -> None:
+    engine = RegexEngine()
+    assert entities.CANADA_SIN in _types(engine, "SIN 046-454-286")
+    assert entities.CANADA_SIN not in _types(engine, "046-454-286")  # no context
+    assert entities.CANADA_SIN not in _types(engine, "SIN 046-454-287")  # bad Luhn
+
+
+def test_medicare_hicn_needs_suffix_and_context() -> None:
+    engine = RegexEngine()
+    assert entities.MEDICARE_HICN in _types(engine, "Medicare 123-45-6789A")
+    assert entities.MEDICARE_HICN not in _types(engine, "123-45-6789A")  # no context
+    # No beneficiary-code suffix -> it's a plain SSN, not a HICN.
+    assert entities.MEDICARE_HICN not in _types(engine, "Medicare 123-45-6789")
+
+
+def test_drivers_license_is_anchored_on_its_label() -> None:
+    engine = RegexEngine()
+    (dl,) = [
+        e
+        for e in engine.detect("driver's license D1234567 on file")
+        if e.entity_type == entities.US_DRIVERS_LICENSE
+    ]
+    assert dl.text == "D1234567"  # the number, not the "driver's license" label
+    assert entities.US_DRIVERS_LICENSE in _types(engine, "DL: X0987654")
+    # A bare token with no license label nearby is not flagged.
+    assert entities.US_DRIVERS_LICENSE not in _types(engine, "the code X0987654 here")
+    # The label with no digit-bearing token after it captures nothing.
+    assert entities.US_DRIVERS_LICENSE not in _types(engine, "driver's license unavailable")

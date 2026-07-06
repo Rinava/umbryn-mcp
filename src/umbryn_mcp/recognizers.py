@@ -206,6 +206,28 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
         context=("iban", "bank", "account", "swift", "bic", "wire", "transfer"),
         validator=checksums.iban_is_valid,
     ),
+    # UK NHS number: 10 digits (printed 3-3-4) with a mod-11 check digit. Any
+    # 10-digit run is a large match space, so it's context-gated even though the
+    # checksum is strong — a nearby "NHS" is what turns a checksum hit into a
+    # confident one.
+    Recognizer(
+        entity_type=entities.UK_NHS_NUMBER,
+        regex=r"\b\d{3}[ -]?\d{3}[ -]?\d{4}\b",
+        base_score=0.4,
+        context=("nhs", "national health service", "national health"),
+        context_required=True,
+        validator=checksums.nhs_is_valid,
+    ),
+    # Canadian SIN: 9 digits (printed 3-3-3) with a Luhn check. Luhn alone passes
+    # ~1 in 10 random numbers, so require a nearby "SIN"/"social insurance".
+    Recognizer(
+        entity_type=entities.CANADA_SIN,
+        regex=r"\b\d{3}[ -]\d{3}[ -]\d{3}\b",
+        base_score=0.4,
+        context=("sin", "social insurance"),
+        context_required=True,
+        validator=checksums.luhn_is_valid,
+    ),
     # --- Strongly structured ---------------------------------------------
     Recognizer(
         entity_type=entities.EMAIL_ADDRESS,
@@ -238,6 +260,16 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
         base_score=0.85,
         context=("ssn", "social security"),
     ),
+    # US ITIN: like an SSN but starts with 9 and the group digits fall in the
+    # IRS ranges 50-65, 70-88, 90-92, 94-99. That constrained shape is specific
+    # enough to score on its own (and the dashed SSN rule excludes the 9XX prefix,
+    # so they never compete).
+    Recognizer(
+        entity_type=entities.US_ITIN,
+        regex=r"\b9\d{2}-(?:5\d|6[0-5]|7\d|8[0-8]|9[0-2]|9[4-9])-\d{4}\b",
+        base_score=0.6,
+        context=("itin", "taxpayer", "tax id", "individual taxpayer"),
+    ),
     Recognizer(
         entity_type=entities.CLIA_NUMBER,
         regex=r"\b\d{2}D\d{7}\b",
@@ -266,6 +298,28 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
         regex=(
             r"(?:MRN|MR\s*#|med(?:ical)?\s*rec(?:ord)?(?:\s*(?:no|num|number|#))?"
             r"|patient\s*id|chart\s*(?:no|number|#))[:#\s-]*([A-Z]{0,4}-?\d{5,12}[A-Z]?)"
+        ),
+        base_score=0.6,
+        group=1,
+    ),
+    # Legacy Medicare HICN: a 9-digit SSN plus a 1-2 char Beneficiary ID Code
+    # suffix (e.g. 123-45-6789A). The alpha suffix is what distinguishes it from
+    # a plain SSN; still context-gated since the digit shape alone is SSN-like.
+    Recognizer(
+        entity_type=entities.MEDICARE_HICN,
+        regex=r"\b\d{3}-?\d{2}-?\d{4}[A-Z]\d?\b",
+        base_score=0.4,
+        context=("hicn", "medicare", "health insurance claim", "claim number", "beneficiary"),
+        context_required=True,
+    ),
+    # US driver's license: no national format or checksum, so anchor on the label
+    # itself and capture the following token (requiring at least one digit to
+    # avoid grabbing an ordinary word). Reports only the number, not the label.
+    Recognizer(
+        entity_type=entities.US_DRIVERS_LICENSE,
+        regex=(
+            r"(?:driver'?s?\s+licen[sc]e|driving\s+licen[sc]e|\bDL)"
+            r"(?:\s*(?:no\.?|number|#))?[:#\s-]*((?=[A-Z0-9]*\d)[A-Z0-9]{4,20})"
         ),
         base_score=0.6,
         group=1,
