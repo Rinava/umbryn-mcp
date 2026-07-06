@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.rinava/phi-mcp",
-  "description": "Fail-closed MCP server that redacts PII/PHI from text before it reaches an LLM — self-hosted, no egress, HIPAA-aware.",
+  "description": "Redacts PII/PHI from text before it reaches an LLM. Fail-closed, self-hosted, no egress.",
   "repository": {
     "url": "https://github.com/Rinava/phi-mcp",
     "source": "github"
