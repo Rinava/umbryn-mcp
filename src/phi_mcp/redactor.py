@@ -19,9 +19,13 @@ format is prefix-free. That makes :meth:`restore` an exact inverse of
 :meth:`redact` for *arbitrary* input — a property the test suite proves with
 Hypothesis.
 
-**Overlaps resolve deterministically.** Nested/overlapping detections are
-reduced to a non-overlapping set by a fixed priority (higher score, then longer
-span, then type name, then position), so output is stable across runs.
+**Overlaps merge, never drop.** Overlapping detections are grouped into
+connected clusters and each cluster is redacted as one span covering the *union*
+of its members, so no byte any detection flagged can survive in cleartext.
+Dropping the lower-priority span instead would leak its non-overlapping bytes
+whenever two confident spans partially overlap. The cluster's placeholder label
+is picked by a fixed priority (higher score, then longer span, then type name,
+then position), so output is stable across runs.
 """
 
 from __future__ import annotations
@@ -105,10 +109,10 @@ class Redactor:
         On success, every returned placeholder is reversible via :meth:`restore`.
         """
         self._check_input(text)
-        # Gate on the FULL candidate set *before* resolving overlaps. Resolving
-        # first could drop an uncertain span that overlaps a confident one, and
-        # its non-overlapping bytes would then leak in cleartext — a fail-closed
-        # bypass. Any uncertain candidate at all must block the whole call.
+        # Gate on the FULL candidate set *before* resolving overlaps. Overlap
+        # resolution folds each overlapping cluster into one span, which would
+        # silently absorb an uncertain span that overlaps a confident one and
+        # skip the block. Any uncertain candidate at all must fail the whole call.
         candidates = self._run_engine(text)
 
         uncertain = [e for e in candidates if e.score < self.min_confidence]
@@ -124,7 +128,7 @@ class Redactor:
                 },
             )
 
-        return self._build_redaction(text, self._resolve_overlaps(candidates))
+        return self._build_redaction(text, self._resolve_overlaps(candidates, text))
 
     def restore(self, redacted_text: str, token_map: dict[str, str]) -> str:
         """Invert :meth:`redact`: substitute every placeholder back to its value.
@@ -191,25 +195,56 @@ class Redactor:
         return kept
 
     @staticmethod
-    def _resolve_overlaps(entities: list[Entity]) -> list[Entity]:
-        """Reduce to a non-overlapping set, deterministically.
+    def _resolve_overlaps(entities: list[Entity], text: str) -> list[Entity]:
+        """Reduce to a non-overlapping set by MERGING overlaps — never dropping bytes.
 
-        Priority: higher score, then longer span, then type name, then start —
-        a total order, so the outcome never depends on input ordering.
+        Overlapping detections are grouped into connected clusters, and each
+        cluster is redacted as a single span covering the *union* of its members.
+        Dropping the lower-priority span instead (the naive resolution) would emit
+        its non-overlapping bytes in cleartext even though a detection flagged
+        them — a PHI leak whenever two confident spans partially overlap (e.g. a
+        greedy EMAIL_ADDRESS match abutting a CREDIT_CARD). Redacting the union
+        guarantees every flagged byte is covered.
+
+        The cluster's label/score is its highest-priority member — higher score,
+        then longer span, then type name, then start — a total order, so the
+        outcome never depends on input ordering. A connected overlap cluster is
+        gap-free, so the union never redacts a byte that no detection flagged.
         """
-        ordered = sorted(
-            entities,
-            key=lambda e: (-e.score, -(e.end - e.start), e.entity_type, e.start),
-        )
-        kept: list[Entity] = []
-        occupied: list[tuple[int, int]] = []
-        for entity in ordered:
-            if any(not (entity.end <= s or entity.start >= t) for s, t in occupied):
-                continue
-            kept.append(entity)
-            occupied.append((entity.start, entity.end))
+        if not entities:
+            return []
+        # Sort by position, then grow a cluster while the next span starts before
+        # the running cluster ends (i.e. overlaps it). Touching-but-disjoint spans
+        # (start == cluster end) stay separate — they share no bytes.
+        clusters: list[list[Entity]] = []
+        cluster_end = -1
+        for entity in sorted(entities, key=lambda e: (e.start, e.end)):
+            if entity.start < cluster_end:
+                clusters[-1].append(entity)
+                cluster_end = max(cluster_end, entity.end)
+            else:
+                clusters.append([entity])
+                cluster_end = entity.end
+
+        merged: list[Entity] = []
+        for cluster in clusters:
+            rep = min(
+                cluster,
+                key=lambda e: (-e.score, -(e.end - e.start), e.entity_type, e.start),
+            )
+            start = min(e.start for e in cluster)
+            end = max(e.end for e in cluster)
+            merged.append(
+                Entity(
+                    entity_type=rep.entity_type,
+                    start=start,
+                    end=end,
+                    score=rep.score,
+                    text=text[start:end],
+                )
+            )
         # Stable left-to-right output.
-        return sorted(kept, key=lambda e: (e.start, e.end, e.entity_type))
+        return sorted(merged, key=lambda e: (e.start, e.end, e.entity_type))
 
     def _build_redaction(self, text: str, entities: list[Entity]) -> RedactionResult:
         """Cut spans by offset and swap in collision-proof typed placeholders."""
