@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-06
+
+### Fixed
+- **MCP Registry publishing**: corrected the `io.github.Rinava` namespace case
+  (GitHub OIDC is case-sensitive) and the matching `mcp-name` marker in the
+  README, so the registry's PyPI-ownership check passes. No changes to the
+  package itself; `0.1.1` is functionally identical but was only published to
+  PyPI, not the registry.
+
 ## [0.1.1] - 2026-07-06
 
 ### Added
@@ -44,6 +53,7 @@ Initial release.
   gate; fast invariant test suite; stdio + Presidio integration smoke tests.
 - Docs: architecture, threat model, contributing guide, example client configs.
 
-[Unreleased]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Rinava/umbryn-mcp/releases/tag/v0.1.0
