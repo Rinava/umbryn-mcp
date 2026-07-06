@@ -22,6 +22,7 @@ import string
 from pathlib import Path
 
 from phi_mcp import entities
+from phi_mcp.checksums import iban_is_valid
 
 _MBI_L = "ACDEFGHJKMNPQRTUVWXY"
 _MBI_AN = _MBI_L + string.digits
@@ -124,6 +125,17 @@ def make_iban(rng: random.Random) -> str:
     return f"DE{check:02d}{bban}"
 
 
+def make_invalid_iban(rng: random.Random) -> str:
+    # IBAN-shaped distractor that must fail the mod-97 check. The ``DE00`` check
+    # digits never occur in a real IBAN, but a random 18-digit body still passes
+    # mod-97 about 1% of the time, so resample until it genuinely fails — an
+    # accidentally-valid IBAN here would be a real detection, not a distractor.
+    while True:
+        candidate = f"DE00{rng.randint(10**17, 10**18 - 1)}"
+        if not iban_is_valid(candidate):
+            return candidate
+
+
 # --- a document builder that records exact spans ---------------------------
 class _Doc:
     def __init__(self) -> None:
@@ -156,7 +168,7 @@ def _distractor(rng: random.Random) -> str:
             f"seen on {rng.randint(2020, 2025)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}",
             f"room {rng.randint(100, 999)}",
             f"dose {rng.randint(5, 500)} mg",
-            f"ref DE00{rng.randint(10**17, 10**18 - 1)}",
+            f"ref {make_invalid_iban(rng)}",
         ]
     )
 

@@ -6,9 +6,9 @@ custom ``PatternRecognizer``s to complement Presidio's built-ins.
 
 Scoring philosophy:
 
-* **Checksum-backed** identifiers (NPI, DEA, credit card) get a high base score
-  *and* a validator — a match that fails its check digit is discarded outright,
-  not merely down-scored.
+* **Checksum-backed** identifiers (NPI, DEA, credit card, IBAN) get a high base
+  score *and* a validator — a match that fails its check digit is discarded
+  outright, not merely down-scored.
 * **Strongly-structured** identifiers (email, MBI, dashed SSN with structural
   exclusions, CLIA) score high on shape alone.
 * **Format-less** identifiers (MRN, bare SSN) are context-gated: they only fire
