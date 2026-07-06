@@ -57,6 +57,32 @@ def test_nested_detection_keeps_higher_priority_span() -> None:
     assert result.token_map["[PERSON_1]"] == "Jane Doe"
 
 
+def test_partial_overlap_redacts_union_and_leaks_no_flagged_bytes() -> None:
+    # Regression for a PHI-leak: two CONFIDENT detections that PARTIALLY overlap.
+    # The naive "drop the lower-priority span" resolution kept only the winner and
+    # emitted the loser's non-overlapping bytes in cleartext. A greedy EMAIL match
+    # abutting a CREDIT_CARD is the canonical trigger.
+    text = "Charge 4111 1111 1111 1111-receipts@store.io now"
+    card_start = text.index("4111")
+    card_end = text.index("-receipts")  # end of the 16-digit PAN
+    email_start = text.index("1111-receipts")  # greedy email absorbs the last group
+    email_end = text.index(" now")
+    entities = make_entities(
+        text,
+        ("CREDIT_CARD", card_start, card_end, 0.85),  # extends LEFT of the winner
+        ("EMAIL_ADDRESS", email_start, email_end, 0.90),  # higher score, wins the label
+    )
+    redactor = Redactor(FakeEngine(entities), detection_floor=0.35, min_confidence=0.5)
+    result = redactor.redact(text)
+    # Every flagged byte is covered by the union: no fragment of the card (which
+    # used to leak) or the email survives in the text sent downstream.
+    for leak in ("4111", "1111", "receipts", "store.io"):
+        assert leak not in result.redacted_text
+    # The overlapping cluster collapses to a single reversible placeholder.
+    assert len(result.token_map) == 1
+    assert redactor.restore(result.redacted_text, result.token_map) == text
+
+
 def test_input_over_limit_raises_typed_error() -> None:
     redactor = Redactor(FakeEngine([]), max_input_chars=10)
     with pytest.raises(InputTooLargeError) as excinfo:
