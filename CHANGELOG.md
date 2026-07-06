@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **IBAN** detection (`IBAN_CODE`), validated with the mod-97 / ISO 7064 check
+  digit, in both the default and Presidio engines.
+
 ## [0.1.0] - 2026-07-03
 
 Initial release.

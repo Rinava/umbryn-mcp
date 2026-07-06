@@ -50,7 +50,7 @@ The PHI/PII-redaction MCP niche is real but underserved — the existing options
 
 - **Three tools, one boundary** — `redact` (→ scrubbed text + reversible token map), `restore` (→ original), `detect` (→ entities found, no mutation).
 - **Fail-closed by construction** — if detection errors *or any detection lands below the confidence threshold*, the call returns a typed error. Uncertainty blocks; it never redacts-what-it-can and passes the rest.
-- **HIPAA-aware detection** — checksum-validated NPI and DEA, position-typed Medicare MBI, context-anchored MRN, CLIA lab IDs, plus standard PII (email, phone, SSN, credit card, IP, URL).
+- **HIPAA-aware detection** — checksum-validated NPI and DEA, position-typed Medicare MBI, context-anchored MRN, CLIA lab IDs, plus standard PII (email, phone, SSN, credit card, IBAN, IP, URL).
 - **Zero-egress, self-hosted** — the default engine is pure regex + checksums with **no network calls and no heavy dependencies**. It installs anywhere Python does.
 - **Optional ML upgrade** — `pip install "phi-redact-mcp[presidio]"` adds Microsoft Presidio + spaCy for `PERSON`/`LOCATION` NER, transparently.
 - **Reversible & deterministic** — collision-proof typed placeholders make `restore(redact(x)) == x` for *arbitrary* input; same input + config always yields the same output.
@@ -174,6 +174,7 @@ All optional; sane defaults mean it runs with zero config. Set via the client's 
 | **Medicare MBI** (position-typed) | ✅ | ✅ |
 | **MRN** (context-anchored) | ✅ | ✅ |
 | **CLIA** lab number | ✅ | ✅ |
+| **IBAN** (mod-97 / ISO 7064 check) | ✅ | ✅ |
 | **Person names** | ❌ | ✅ (spaCy NER) |
 | **Addresses / locations** | ❌ | ✅ (spaCy NER) |
 

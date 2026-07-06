@@ -22,6 +22,7 @@ import string
 from pathlib import Path
 
 from phi_mcp import entities
+from phi_mcp.checksums import iban_is_valid
 
 _MBI_L = "ACDEFGHJKMNPQRTUVWXY"
 _MBI_AN = _MBI_L + string.digits
@@ -115,6 +116,26 @@ def make_clia(rng: random.Random) -> str:
     return f"{rng.randint(10, 99)}D{rng.randint(1000000, 9999999)}"
 
 
+def make_iban(rng: random.Random) -> str:
+    # Synthetic DE-style IBAN: 18-digit numeric BBAN with correct mod-97 check digits.
+    bban = "".join(str(rng.randint(0, 9)) for _ in range(18))
+    rearranged = bban + "DE00"
+    digits = "".join(ch if ch.isdigit() else str(ord(ch) - 55) for ch in rearranged)
+    check = 98 - (int(digits) % 97)
+    return f"DE{check:02d}{bban}"
+
+
+def make_invalid_iban(rng: random.Random) -> str:
+    # IBAN-shaped distractor that must fail the mod-97 check. The ``DE00`` check
+    # digits never occur in a real IBAN, but a random 18-digit body still passes
+    # mod-97 about 1% of the time, so resample until it genuinely fails — an
+    # accidentally-valid IBAN here would be a real detection, not a distractor.
+    while True:
+        candidate = f"DE00{rng.randint(10**17, 10**18 - 1)}"
+        if not iban_is_valid(candidate):
+            return candidate
+
+
 # --- a document builder that records exact spans ---------------------------
 class _Doc:
     def __init__(self) -> None:
@@ -147,6 +168,7 @@ def _distractor(rng: random.Random) -> str:
             f"seen on {rng.randint(2020, 2025)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}",
             f"room {rng.randint(100, 999)}",
             f"dose {rng.randint(5, 500)} mg",
+            f"ref {make_invalid_iban(rng)}",
         ]
     )
 
@@ -169,6 +191,8 @@ def _document(rng: random.Random) -> dict:
         d.lit(" or phone ").ent(entities.PHONE_NUMBER, make_phone(rng)).lit(". ")
     if rng.random() < 0.4:
         d.lit("Card on file ").ent(entities.CREDIT_CARD, make_cc(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("IBAN ").ent(entities.IBAN_CODE, make_iban(rng)).lit(". ")
     if rng.random() < 0.3:
         d.lit("Portal IP ").ent(entities.IP_ADDRESS, make_ip(rng)).lit(". ")
     d.lit(f"{_distractor(rng)}.")

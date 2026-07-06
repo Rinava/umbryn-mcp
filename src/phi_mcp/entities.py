@@ -26,3 +26,6 @@ DEA_NUMBER: Final = "DEA_NUMBER"  # Drug Enforcement Administration number (chec
 MEDICAL_RECORD_NUMBER: Final = "MEDICAL_RECORD_NUMBER"  # MRN, context-gated
 MEDICARE_BENEFICIARY_ID: Final = "MEDICARE_BENEFICIARY_ID"  # MBI, position-typed
 CLIA_NUMBER: Final = "CLIA_NUMBER"  # Clinical lab identifier
+
+# --- Financial identifiers --------------------------------------------------
+IBAN_CODE: Final = "IBAN_CODE"  # International Bank Account Number (mod-97 / ISO 7064)

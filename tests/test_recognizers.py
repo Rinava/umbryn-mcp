@@ -7,7 +7,7 @@ import time
 import pytest
 
 from phi_mcp import entities
-from phi_mcp.checksums import dea_is_valid, luhn_is_valid, npi_is_valid
+from phi_mcp.checksums import dea_is_valid, iban_is_valid, luhn_is_valid, npi_is_valid
 from phi_mcp.regex_engine import RegexEngine
 
 
@@ -34,6 +34,15 @@ def test_luhn() -> None:
     assert not luhn_is_valid("4111111111111112")
 
 
+def test_iban_checksum() -> None:
+    assert iban_is_valid("DE94123456780000001234")
+    assert iban_is_valid("DE94 1234 5678 0000 0012 34")
+    assert iban_is_valid("GB15ZZZZ01020300654321")
+    assert iban_is_valid("NL02ABNA0123456789")
+    assert not iban_is_valid("DE00123456780000001234")
+    assert not iban_is_valid("DE94 1234")
+
+
 # --- RegexEngine detection --------------------------------------------------
 def _types(engine: RegexEngine, text: str) -> set[str]:
     return {e.entity_type for e in engine.detect(text)}
@@ -48,6 +57,13 @@ def test_npi_requires_valid_checksum() -> None:
     assert entities.NPI in _types(engine, "NPI 1234567893")
     # A 10-digit number that fails the checksum is not an NPI.
     assert entities.NPI not in _types(engine, "order 1234567890")
+
+
+def test_iban_requires_valid_checksum() -> None:
+    engine = RegexEngine()
+    assert entities.IBAN_CODE in _types(engine, "Wire to IBAN DE94123456780000001234")
+    assert entities.IBAN_CODE in _types(engine, "Wire to DE94 1234 5678 0000 0012 34")
+    assert entities.IBAN_CODE not in _types(engine, "ref DE00123456780000001234 here")
 
 
 def test_mrn_requires_context() -> None:

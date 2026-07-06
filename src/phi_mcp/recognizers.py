@@ -6,9 +6,9 @@ custom ``PatternRecognizer``s to complement Presidio's built-ins.
 
 Scoring philosophy:
 
-* **Checksum-backed** identifiers (NPI, DEA, credit card) get a high base score
-  *and* a validator — a match that fails its check digit is discarded outright,
-  not merely down-scored.
+* **Checksum-backed** identifiers (NPI, DEA, credit card, IBAN) get a high base
+  score *and* a validator — a match that fails its check digit is discarded
+  outright, not merely down-scored.
 * **Strongly-structured** identifiers (email, MBI, dashed SSN with structural
   exclusions, CLIA) score high on shape alone.
 * **Format-less** identifiers (MRN, bare SSN) are context-gated: they only fire
@@ -88,6 +88,13 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
         base_score=0.85,
         context=("card", "credit", "visa", "mastercard", "amex", "payment"),
         validator=checksums.luhn_is_valid,
+    ),
+    Recognizer(
+        entity_type=entities.IBAN_CODE,
+        regex=r"\b[A-Z]{2}\d{2}(?:[ ]?[A-Z0-9]){11,30}\b",
+        base_score=0.85,
+        context=("iban", "bank", "account", "swift", "bic", "wire", "transfer"),
+        validator=checksums.iban_is_valid,
     ),
     # --- Strongly structured ---------------------------------------------
     Recognizer(
