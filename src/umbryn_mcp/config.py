@@ -54,6 +54,7 @@ _KNOWN_KEYS = frozenset(
         "entity_thresholds",
         "disabled_entities",
         "recognizers",
+        "audit_log",
     }
 )
 
@@ -72,6 +73,8 @@ class Config:
     detection_floor: float = DEFAULT_DETECTION_FLOOR
     max_input_chars: int = DEFAULT_MAX_INPUT_CHARS
     spacy_model: str = "en_core_web_lg"
+    #: Emit structured audit records (redaction counts/types, never raw values).
+    audit_log: bool = False
     #: Per-entity trust thresholds, overriding ``min_confidence`` for that type.
     entity_thresholds: Mapping[str, float] = field(default_factory=dict)
     #: Entity types to drop entirely — never detected, never redacted.
@@ -122,6 +125,7 @@ class Config:
             spacy_model=_pick_str(
                 env, "UMBRYN_SPACY_MODEL", file_data, "spacy_model", "en_core_web_lg"
             ),
+            audit_log=_pick_bool(env, "UMBRYN_AUDIT_LOG", file_data, "audit_log", False),
             entity_thresholds=_parse_entity_thresholds(file_data.get("entity_thresholds")),
             disabled_entities=_parse_disabled_entities(file_data.get("disabled_entities")),
             recognizers=_parse_recognizers(file_data.get("recognizers")),
@@ -214,6 +218,27 @@ def _pick_float(
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{file_key} must be a number, got {value!r}")
     return float(value)
+
+
+_TRUE = frozenset({"1", "true", "yes", "on"})
+_FALSE = frozenset({"0", "false", "no", "off", ""})
+
+
+def _pick_bool(
+    env: Mapping[str, str], env_key: str, file_data: Mapping[str, Any], file_key: str, default: bool
+) -> bool:
+    raw = env.get(env_key)
+    if raw is not None:
+        lowered = raw.strip().lower()
+        if lowered in _TRUE:
+            return True
+        if lowered in _FALSE:
+            return False
+        raise ValueError(f"{env_key} must be a boolean (true/false), got {raw!r}")
+    value = file_data.get(file_key, default)
+    if not isinstance(value, bool):
+        raise ValueError(f"{file_key} must be a boolean, got {value!r}")
+    return value
 
 
 def _pick_int(

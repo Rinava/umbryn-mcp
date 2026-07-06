@@ -58,3 +58,19 @@ def test_build_redactor_wires_thresholds() -> None:
     redactor = build_redactor(Config(engine="regex", min_confidence=0.66, detection_floor=0.22))
     assert redactor.min_confidence == 0.66
     assert redactor.detection_floor == 0.22
+
+
+def test_audit_log_defaults_off_and_parses_truthy_env() -> None:
+    assert Config.from_env({}).audit_log is False
+    assert Config.from_env({"UMBRYN_AUDIT_LOG": "true"}).audit_log is True
+    assert Config.from_env({"UMBRYN_AUDIT_LOG": "0"}).audit_log is False
+
+
+def test_invalid_audit_log_env_rejected() -> None:
+    with pytest.raises(ValueError, match="boolean"):
+        Config.from_env({"UMBRYN_AUDIT_LOG": "maybe"})
+
+
+def test_build_redactor_wires_audit_sink() -> None:
+    assert build_redactor(Config(engine="regex", audit_log=True))._audit is not None
+    assert build_redactor(Config(engine="regex", audit_log=False))._audit is None
