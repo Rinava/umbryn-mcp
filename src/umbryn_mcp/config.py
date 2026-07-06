@@ -53,6 +53,7 @@ _KNOWN_KEYS = frozenset(
         "spacy_model",
         "entity_thresholds",
         "disabled_entities",
+        "recognizers",
     }
 )
 
@@ -75,6 +76,9 @@ class Config:
     entity_thresholds: Mapping[str, float] = field(default_factory=dict)
     #: Entity types to drop entirely — never detected, never redacted.
     disabled_entities: frozenset[str] = frozenset()
+    #: Raw custom-recognizer specs; the factory turns these into
+    #: :class:`~umbryn_mcp.recognizers.Recognizer` objects at startup.
+    recognizers: tuple[Mapping[str, Any], ...] = ()
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Config:
@@ -120,6 +124,7 @@ class Config:
             ),
             entity_thresholds=_parse_entity_thresholds(file_data.get("entity_thresholds")),
             disabled_entities=_parse_disabled_entities(file_data.get("disabled_entities")),
+            recognizers=_parse_recognizers(file_data.get("recognizers")),
         )
 
 
@@ -167,6 +172,17 @@ def _parse_disabled_entities(raw: Any) -> frozenset[str]:
     if not isinstance(raw, list) or not all(isinstance(item, str) for item in raw):
         raise ValueError("disabled_entities must be a JSON array of entity_type strings")
     return frozenset(raw)
+
+
+def _parse_recognizers(raw: Any) -> tuple[Mapping[str, Any], ...]:
+    """Shallow-validate the ``recognizers`` array. Per-recognizer field
+    validation and regex compilation happen when the factory turns each spec
+    into a :class:`~umbryn_mcp.recognizers.Recognizer`."""
+    if raw is None:
+        return ()
+    if not isinstance(raw, list) or not all(isinstance(item, dict) for item in raw):
+        raise ValueError("recognizers must be a JSON array of recognizer objects")
+    return tuple(raw)
 
 
 def _pick_str(

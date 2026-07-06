@@ -12,33 +12,46 @@ import logging
 
 from umbryn_mcp.config import ENGINE_AUTO, ENGINE_PRESIDIO, ENGINE_REGEX, Config
 from umbryn_mcp.engine import DetectionEngine
+from umbryn_mcp.recognizers import DEFAULT_RECOGNIZERS, Recognizer
 from umbryn_mcp.redactor import Redactor
 from umbryn_mcp.regex_engine import RegexEngine
 
 logger = logging.getLogger("umbryn_mcp")
 
 
+def _recognizers(config: Config) -> tuple[Recognizer, ...]:
+    """The built-in ruleset plus any user-defined recognizers from config.
+
+    A malformed custom recognizer raises here, at startup, rather than silently
+    disabling detection later.
+    """
+    custom = tuple(Recognizer.from_dict(spec) for spec in config.recognizers)
+    return DEFAULT_RECOGNIZERS + custom
+
+
 def build_engine(config: Config) -> DetectionEngine:
     """Construct the detection engine named by ``config``."""
+    recognizers = _recognizers(config)
+
     if config.engine == ENGINE_REGEX:
-        return RegexEngine()
+        return RegexEngine(recognizers)
 
     if config.engine == ENGINE_PRESIDIO:
         from umbryn_mcp.presidio_engine import PresidioEngine
 
-        return PresidioEngine(spacy_model=config.spacy_model)
+        return PresidioEngine(spacy_model=config.spacy_model, recognizers=recognizers)
 
     # auto: prefer Presidio, fall back cleanly.
     if config.engine == ENGINE_AUTO:
         try:
             from umbryn_mcp.presidio_engine import PresidioEngine
 
-            engine = PresidioEngine(spacy_model=config.spacy_model)
+            engine = PresidioEngine(spacy_model=config.spacy_model, recognizers=recognizers)
             logger.info("umbryn-mcp: using Presidio engine")
             return engine
         except Exception as exc:  # noqa: BLE001 - deliberate: degrade to regex on any failure
             logger.info("umbryn-mcp: Presidio unavailable (%s); using regex engine", exc)
-            return RegexEngine()
+            return RegexEngine(recognizers)
 
     raise ValueError(f"unknown engine: {config.engine!r}")
 

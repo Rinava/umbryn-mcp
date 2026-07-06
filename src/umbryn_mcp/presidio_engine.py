@@ -19,6 +19,7 @@ install raises a clear, actionable :class:`ImportError`.
 
 from __future__ import annotations
 
+from umbryn_mcp.recognizers import DEFAULT_RECOGNIZERS, Recognizer
 from umbryn_mcp.regex_engine import RegexEngine
 from umbryn_mcp.types import Entity
 
@@ -37,6 +38,8 @@ class PresidioEngine:
         spacy_model: the spaCy model to load (default ``en_core_web_lg``; use
             ``en_core_web_sm`` for a lighter, lower-recall setup).
         language: analysis language.
+        recognizers: the identifier ruleset (built-ins plus any custom
+            recognizers from config) that Presidio complements with NER.
     """
 
     name = "presidio"
@@ -45,7 +48,12 @@ class PresidioEngine:
     #: regex engine can't produce.
     _NER_ENTITIES = ("PERSON", "LOCATION", "NRP", "DATE_TIME")
 
-    def __init__(self, spacy_model: str = "en_core_web_lg", language: str = "en") -> None:
+    def __init__(
+        self,
+        spacy_model: str = "en_core_web_lg",
+        language: str = "en",
+        recognizers: tuple[Recognizer, ...] = DEFAULT_RECOGNIZERS,
+    ) -> None:
         try:
             from presidio_analyzer import AnalyzerEngine
             from presidio_analyzer.nlp_engine import NlpEngineProvider
@@ -61,7 +69,7 @@ class PresidioEngine:
         ).create_engine()
         self._analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=[language])
         # Identifiers come from the shared, checksum-validated ruleset.
-        self._identifiers = RegexEngine()
+        self._identifiers = RegexEngine(recognizers)
 
     def detect(self, text: str) -> list[Entity]:
         ner = self._analyzer.analyze(

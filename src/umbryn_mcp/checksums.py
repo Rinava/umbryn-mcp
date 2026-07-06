@@ -13,6 +13,7 @@ and the Luhn spec.
 from __future__ import annotations
 
 import re
+from collections.abc import Callable
 
 _DIGITS = re.compile(r"\d")
 
@@ -88,3 +89,15 @@ def iban_is_valid(iban: str) -> bool:
     rearranged = iban[4:] + iban[:4]
     digits = "".join(ch if ch.isdigit() else str(ord(ch) - 55) for ch in rearranged)
     return int(digits) % 97 == 1
+
+
+#: Validators a custom recognizer may reference *by name* from the config file.
+#: Config names a validator with a string, never supplies a callable, so a
+#: config file can attach a check digit to a custom recognizer without being able
+#: to inject arbitrary code.
+VALIDATORS: dict[str, Callable[[str], bool]] = {
+    "luhn": luhn_is_valid,
+    "npi": npi_is_valid,
+    "dea": dea_is_valid,
+    "iban": iban_is_valid,
+}

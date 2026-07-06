@@ -21,8 +21,9 @@ context word adds ``CONTEXT_BOOST`` and floors the score at ``CONTEXT_FLOOR``.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from umbryn_mcp import checksums, entities
 
@@ -31,6 +32,20 @@ CONTEXT_BOOST = 0.35
 CONTEXT_FLOOR = 0.4
 CONTEXT_WINDOW_BEFORE = 48
 CONTEXT_WINDOW_AFTER = 12
+
+#: Regex-flag names a custom recognizer may set from the config file.
+_FLAG_NAMES: dict[str, int] = {
+    "IGNORECASE": re.IGNORECASE,
+    "I": re.IGNORECASE,
+    "MULTILINE": re.MULTILINE,
+    "M": re.MULTILINE,
+    "DOTALL": re.DOTALL,
+    "S": re.DOTALL,
+    "VERBOSE": re.VERBOSE,
+    "X": re.VERBOSE,
+    "ASCII": re.ASCII,
+    "A": re.ASCII,
+}
 
 # Allowed MBI letters (A-Z minus S, L, O, I, B, Z) and alphanumerics.
 _MBI_L = "[ACDEFGHJKMNPQRTUVWXY]"
@@ -62,6 +77,101 @@ class Recognizer:
     validator: Callable[[str], bool] | None = None
     group: int = 0
     flags: int = field(default=re.IGNORECASE)
+
+    @classmethod
+    def from_dict(cls, spec: Mapping[str, Any]) -> Recognizer:
+        """Build a recognizer from a plain config dict, validating every field.
+
+        Used to load user-defined recognizers from the JSON config file. A
+        ``validator`` is named by string and resolved against
+        :data:`~umbryn_mcp.checksums.VALIDATORS` — a config file can attach a
+        check digit but cannot inject a callable. Raises :class:`ValueError` on
+        any malformed field (including a regex that fails to compile), so a bad
+        config fails at startup rather than silently disabling detection.
+
+        Note on ReDoS: the regex is the operator's own trusted config, but a
+        pathological pattern can still backtrack catastrophically. Prefer bounded
+        quantifiers, as the built-in recognizers do.
+        """
+        if not isinstance(spec, Mapping):
+            raise ValueError(f"recognizer spec must be an object, got {spec!r}")
+
+        entity_type = spec.get("entity_type")
+        if not isinstance(entity_type, str) or not entity_type:
+            raise ValueError("recognizer 'entity_type' must be a non-empty string")
+
+        regex = spec.get("regex")
+        if not isinstance(regex, str) or not regex:
+            raise ValueError(f"recognizer {entity_type!r} 'regex' must be a non-empty string")
+
+        base_score = spec.get("base_score")
+        if isinstance(base_score, bool) or not isinstance(base_score, (int, float)):
+            raise ValueError(f"recognizer {entity_type!r} 'base_score' must be a number")
+        if not 0.0 <= base_score <= 1.0:
+            raise ValueError(f"recognizer {entity_type!r} 'base_score' must be in [0, 1]")
+
+        context = spec.get("context", [])
+        if not isinstance(context, list) or not all(isinstance(w, str) for w in context):
+            raise ValueError(f"recognizer {entity_type!r} 'context' must be an array of strings")
+
+        context_required = spec.get("context_required", False)
+        if not isinstance(context_required, bool):
+            raise ValueError(f"recognizer {entity_type!r} 'context_required' must be a boolean")
+
+        group = spec.get("group", 0)
+        if isinstance(group, bool) or not isinstance(group, int) or group < 0:
+            raise ValueError(f"recognizer {entity_type!r} 'group' must be a non-negative integer")
+
+        validator = None
+        validator_name = spec.get("validator")
+        if validator_name is not None:
+            if not isinstance(validator_name, str) or validator_name not in checksums.VALIDATORS:
+                allowed = ", ".join(sorted(checksums.VALIDATORS))
+                raise ValueError(
+                    f"recognizer {entity_type!r} 'validator' must be one of: {allowed}"
+                )
+            validator = checksums.VALIDATORS[validator_name]
+
+        flags = _parse_flags(entity_type, spec.get("flags"))
+        try:
+            re.compile(regex, flags)
+        except re.error as exc:
+            raise ValueError(
+                f"recognizer {entity_type!r} 'regex' failed to compile: {exc}"
+            ) from exc
+
+        return cls(
+            entity_type=entity_type,
+            regex=regex,
+            base_score=float(base_score),
+            context=tuple(context),
+            context_required=context_required,
+            validator=validator,
+            group=group,
+            flags=flags,
+        )
+
+
+def _parse_flags(entity_type: str, raw: Any) -> int:
+    """Resolve a list of regex-flag names to a combined flag int.
+
+    Omitting ``flags`` defaults to case-insensitive (matching the built-ins); an
+    explicit empty list means no flags.
+    """
+    if raw is None:
+        return re.IGNORECASE
+    if not isinstance(raw, list):
+        raise ValueError(f"recognizer {entity_type!r} 'flags' must be an array of flag names")
+    flags = 0
+    for name in raw:
+        key = name.upper() if isinstance(name, str) else None
+        if key is None or key not in _FLAG_NAMES:
+            allowed = ", ".join(sorted(_FLAG_NAMES))
+            raise ValueError(
+                f"recognizer {entity_type!r} unknown regex flag {name!r}; allowed: {allowed}"
+            )
+        flags |= _FLAG_NAMES[key]
+    return flags
 
 
 # Ordered roughly by precision/value. The engine runs all of them; the redactor
