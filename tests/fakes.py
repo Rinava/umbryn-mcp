@@ -7,7 +7,7 @@ detection quality of the real engines is measured separately by the eval harness
 
 from __future__ import annotations
 
-from phi_mcp.types import Entity
+from umbryn_mcp.types import Entity
 
 
 class FakeEngine:

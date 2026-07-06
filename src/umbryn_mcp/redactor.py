@@ -32,15 +32,15 @@ from __future__ import annotations
 
 import re
 
-from phi_mcp.engine import DetectionEngine
-from phi_mcp.errors import (
+from umbryn_mcp.engine import DetectionEngine
+from umbryn_mcp.errors import (
     DetectionError,
     InputTooLargeError,
     InvalidInputError,
     LowConfidenceError,
     RestoreError,
 )
-from phi_mcp.types import DetectionResult, Entity, RedactionResult
+from umbryn_mcp.types import DetectionResult, Entity, RedactionResult
 
 DEFAULT_MIN_CONFIDENCE = 0.5
 DEFAULT_DETECTION_FLOOR = 0.35
@@ -48,7 +48,7 @@ DEFAULT_MAX_INPUT_CHARS = 100_000
 
 
 class Redactor:
-    """Orchestrates a :class:`~phi_mcp.engine.DetectionEngine` into a fail-closed
+    """Orchestrates a :class:`~umbryn_mcp.engine.DetectionEngine` into a fail-closed
     redact / restore / detect boundary.
 
     Args:

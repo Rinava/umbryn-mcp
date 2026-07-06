@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "phi-redact": {
-      "command": "phi-redact-mcp",
+    "umbryn-mcp": {
+      "command": "umbryn-mcp",
       "env": {
-        "PHI_MCP_ENGINE": "auto",
-        "PHI_MCP_MIN_CONFIDENCE": "0.5"
+        "UMBRYN_ENGINE": "auto",
+        "UMBRYN_MIN_CONFIDENCE": "0.5"
       }
     }
   }

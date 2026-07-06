@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "phi-redact-mcp"
+name = "umbryn-mcp"
 version = "0.1.0"
-description = "Fail-closed MCP server that redacts PII/PHI from text before it reaches an LLM — self-hosted, no egress, HIPAA-aware."
+description = "Redacts PII/PHI from text before it reaches an LLM. Fail-closed, self-hosted, no egress."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -64,16 +64,16 @@ dev = [
 ]
 
 [project.scripts]
-phi-redact-mcp = "phi_mcp.server:main"
+umbryn-mcp = "umbryn_mcp.server:main"
 
 [project.urls]
-Homepage = "https://github.com/Rinava/phi-mcp"
-Repository = "https://github.com/Rinava/phi-mcp"
-Issues = "https://github.com/Rinava/phi-mcp/issues"
-Changelog = "https://github.com/Rinava/phi-mcp/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/Rinava/umbryn-mcp"
+Repository = "https://github.com/Rinava/umbryn-mcp"
+Issues = "https://github.com/Rinava/umbryn-mcp/issues"
+Changelog = "https://github.com/Rinava/umbryn-mcp/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/phi_mcp"]
+packages = ["src/umbryn_mcp"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
@@ -82,7 +82,7 @@ testpaths = ["tests"]
 addopts = "-q"
 
 [tool.coverage.run]
-source = ["phi_mcp"]
+source = ["umbryn_mcp"]
 branch = true
 
 [tool.coverage.report]
@@ -99,7 +99,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "C4", "BLE", "RUF"]
 
 [tool.mypy]
 python_version = "3.10"
-packages = ["phi_mcp"]
+packages = ["umbryn_mcp"]
 strict = true
 
 # Presidio is an optional dependency without type stubs; don't fail typing on it.

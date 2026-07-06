@@ -5,7 +5,7 @@ name: Publish
 # Prerequisites (one-time setup):
 #   - Configure PyPI Trusted Publishing for this repo + this workflow
 #     (https://docs.pypi.org/trusted-publishers/) so no PyPI token is needed.
-#   - The registry name in server.json (io.github.rinava/phi-mcp) is authorized
+#   - The registry name in server.json (io.github.rinava/umbryn-mcp) is authorized
 #     via GitHub OIDC because it matches this repo's owner.
 
 on:

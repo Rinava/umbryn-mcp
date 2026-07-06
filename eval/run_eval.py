@@ -18,8 +18,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from phi_mcp.config import Config
-from phi_mcp.factory import build_engine
+from umbryn_mcp.config import Config
+from umbryn_mcp.factory import build_engine
 
 # The identifiers the quality bar is enforced on.
 HIPAA_ENTITIES = {

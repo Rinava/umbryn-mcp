@@ -1,6 +1,6 @@
 # Threat model & honest limitations
 
-This document states plainly what `phi-redact-mcp` defends against, what it
+This document states plainly what `umbryn-mcp` defends against, what it
 assumes, and what it does **not** do. Read it before relying on the tool in any
 setting where a leak matters.
 
@@ -38,7 +38,7 @@ v1 (redaction happens through explicit tool calls you wire into your pipeline).
 
 ```
         ┌─────────── you run and control this ───────────┐
-input → │  MCP client → phi-redact-mcp → detection engine │ → scrubbed text → model provider
+input → │  MCP client → umbryn-mcp → detection engine │ → scrubbed text → model provider
         └─────────────────────────────────────────────────┘
                          ▲
                   token_map stays here

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 💬 Questions & discussion
-    url: https://github.com/Rinava/phi-mcp/discussions
+    url: https://github.com/Rinava/umbryn-mcp/discussions
     about: Ask how-to questions, share ideas, or discuss usage here.
   - name: 🔒 Report a security vulnerability
-    url: https://github.com/Rinava/phi-mcp/security/advisories/new
+    url: https://github.com/Rinava/umbryn-mcp/security/advisories/new
     about: Please report security issues privately, not as public issues.

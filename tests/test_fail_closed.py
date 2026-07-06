@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import pytest
 
-from phi_mcp import DetectionError, LowConfidenceError, Redactor
-from phi_mcp.types import Entity
 from tests.fakes import FakeEngine, make_entities
+from umbryn_mcp import DetectionError, LowConfidenceError, Redactor
+from umbryn_mcp.types import Entity
 
 TEXT = "call me at 555-0100 about record 1234567"
 

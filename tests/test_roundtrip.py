@@ -11,9 +11,9 @@ from __future__ import annotations
 from hypothesis import given
 from hypothesis import strategies as st
 
-from phi_mcp import Redactor
-from phi_mcp.types import Entity
 from tests.fakes import FakeEngine, make_entities
+from umbryn_mcp import Redactor
+from umbryn_mcp.types import Entity
 
 
 def _redactor(entities: list[Entity]) -> Redactor:

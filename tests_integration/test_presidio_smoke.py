@@ -3,7 +3,7 @@
 Skipped unless Presidio *and* a spaCy model are installed, so it never runs in
 the fast loop and never blocks contributors who only use the regex engine.
 
-Setup:  pip install "phi-redact-mcp[presidio]" && python -m spacy download en_core_web_lg
+Setup:  pip install "umbryn-mcp[presidio]" && python -m spacy download en_core_web_lg
 Run:    pytest tests_integration
 """
 
@@ -13,7 +13,7 @@ import importlib.util
 
 import pytest
 
-from phi_mcp import entities
+from umbryn_mcp import entities
 
 _HAS_PRESIDIO = importlib.util.find_spec("presidio_analyzer") is not None
 
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(not _HAS_PRESIDIO, reason="presidio-analyzer not
 
 
 def _engine():
-    from phi_mcp.presidio_engine import PresidioEngine
+    from umbryn_mcp.presidio_engine import PresidioEngine
 
     # en_core_web_sm is the lightest model; good enough for a smoke test.
     return PresidioEngine(spacy_model="en_core_web_sm")

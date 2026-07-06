@@ -1,6 +1,6 @@
 """End-to-end transport smoke test.
 
-Launches the real ``phi-redact-mcp`` server as a subprocess and drives it through
+Launches the real ``umbryn-mcp`` server as a subprocess and drives it through
 a real MCP client over stdio: initialize, list tools, redact, restore. This is
 the only test that exercises the actual wire protocol and process entry point, so
 it lives in the slow suite, out of the fast red-green loop.
@@ -18,8 +18,8 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 pytestmark = pytest.mark.skipif(
-    shutil.which("phi-redact-mcp") is None,
-    reason="phi-redact-mcp console script not installed (pip install -e .)",
+    shutil.which("umbryn-mcp") is None,
+    reason="umbryn-mcp console script not installed (pip install -e .)",
 )
 
 TEXT = "Contact john.doe@example.com; NPI 1234567893."
@@ -33,8 +33,8 @@ def _structured(result: object) -> dict:
 def test_stdio_roundtrip_over_real_transport() -> None:
     async def scenario() -> None:
         params = StdioServerParameters(
-            command="phi-redact-mcp",
-            env={"PHI_MCP_ENGINE": "regex"},  # pin the dependency-free engine
+            command="umbryn-mcp",
+            env={"UMBRYN_ENGINE": "regex"},  # pin the dependency-free engine
         )
         async with (
             stdio_client(params) as (read, write),
