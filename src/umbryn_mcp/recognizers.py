@@ -332,4 +332,14 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
         context=("ssn", "social security", "soc sec"),
         context_required=True,
     ),
+    # US passport number: 9 chars — either 9 digits (legacy) or a letter + 8 digits
+    # (Next Generation / passport card). No check digit, and the shape is loose, so
+    # it only fires next to a passport trigger word.
+    Recognizer(
+        entity_type=entities.US_PASSPORT,
+        regex=r"\b(?:\d{9}|[A-Z]\d{8})\b",
+        base_score=0.4,
+        context=("passport", "passport number", "passport no", "travel document"),
+        context_required=True,
+    ),
 )
