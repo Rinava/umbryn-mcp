@@ -12,6 +12,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   information under mypy/pyright. The distribution already advertised
   `Typing :: Typed`, but the marker was missing, so type checkers treated the
   package as untyped.
+### Added
+- **Published benchmark**: per-entity precision/recall for the default engine in
+  the README, reproducible via `python eval/run_eval.py --markdown`. The eval
+  corpus now exercises every shipped recognizer (ITIN, NHS, SIN, HICN, driver's
+  license), with checksum-failing look-alikes woven in as distractors, and the
+  CI quality gate now also covers `MEDICARE_HICN` and `US_DRIVERS_LICENSE`.
 
 ## [0.2.0] - 2026-07-06
 

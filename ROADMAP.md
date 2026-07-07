@@ -23,8 +23,8 @@ follow contributor interest. Open an issue to discuss before starting something 
   identifiers. (ITIN, UK NHS, Canadian SIN, Medicare HICN, and US driver's
   license have shipped.) *(good first issue — see [CONTRIBUTING](CONTRIBUTING.md))*
 - **Remote transport** — streamable-HTTP transport for hosted/multi-client use.
-- **Published benchmark** — precision/recall on a public synthetic PHI corpus in
-  the README.
+- ✅ **Published benchmark** — per-entity precision/recall on the synthetic corpus,
+  in the README and reproducible via `python eval/run_eval.py --markdown`.
 - **Coverage + release automation** — Codecov badge, tag-triggered PyPI + MCP
   Registry publish. *(partly scaffolded in `.github/workflows/`)*
 

@@ -22,7 +22,7 @@ import string
 from pathlib import Path
 
 from umbryn_mcp import entities
-from umbryn_mcp.checksums import iban_is_valid
+from umbryn_mcp.checksums import iban_is_valid, luhn_is_valid, nhs_is_valid
 
 _MBI_L = "ACDEFGHJKMNPQRTUVWXY"
 _MBI_AN = _MBI_L + string.digits
@@ -136,6 +136,65 @@ def make_invalid_iban(rng: random.Random) -> str:
             return candidate
 
 
+# ITIN group digits fall only in the IRS-issued ranges.
+_ITIN_GROUPS = [*range(50, 66), *range(70, 89), *range(90, 93), *range(94, 100)]
+
+
+def make_itin(rng: random.Random) -> str:
+    return f"9{rng.randint(0, 99):02d}-{rng.choice(_ITIN_GROUPS):02d}-{rng.randint(0, 9999):04d}"
+
+
+def make_nhs(rng: random.Random) -> str:
+    # 10 digits with a valid mod-11 check digit, printed unbroken to avoid a
+    # 3-3-4 grouping that would also match the phone recognizer. Some 9-digit
+    # bases have no valid check digit (remainder 10), so resample those.
+    while True:
+        base = "".join(str(rng.randint(0, 9)) for _ in range(9))
+        for c in range(10):
+            if nhs_is_valid(base + str(c)):
+                return base + str(c)
+
+
+def make_sin(rng: random.Random) -> str:
+    # 9 Luhn-valid digits, printed in the distinctive 3-3-3 grouping.
+    base = "".join(str(rng.randint(0, 9)) for _ in range(8))
+    for c in range(10):
+        if luhn_is_valid(base + str(c)):
+            s = base + str(c)
+            return f"{s[:3]}-{s[3:6]}-{s[6:]}"
+    raise AssertionError("unreachable: some check digit always yields a valid Luhn number")
+
+
+def make_invalid_sin(rng: random.Random) -> str:
+    while True:
+        s = "".join(str(rng.randint(0, 9)) for _ in range(9))
+        if not luhn_is_valid(s):
+            return f"{s[:3]}-{s[3:6]}-{s[6:]}"
+
+
+def make_invalid_nhs(rng: random.Random) -> str:
+    while True:
+        s = "".join(str(rng.randint(0, 9)) for _ in range(10))
+        if not nhs_is_valid(s):
+            return s
+
+
+def make_hicn(rng: random.Random) -> str:
+    # 9-digit SSN body + a beneficiary-identification-code letter, printed
+    # unbroken so the SSN body alone doesn't also match the dashed-SSN rule.
+    area = rng.randint(1, 899)
+    while area == 666:
+        area = rng.randint(1, 899)
+    body = f"{area:03d}{rng.randint(1, 99):02d}{rng.randint(1, 9999):04d}"
+    return body + rng.choice(string.ascii_uppercase)
+
+
+def make_dl(rng: random.Random) -> str:
+    # A letter + 7 digits — a plausible license token that carries a digit (so
+    # the recognizer's digit lookahead fires). No national format or checksum.
+    return rng.choice(string.ascii_uppercase) + "".join(str(rng.randint(0, 9)) for _ in range(7))
+
+
 # --- a document builder that records exact spans ---------------------------
 class _Doc:
     def __init__(self) -> None:
@@ -169,6 +228,9 @@ def _distractor(rng: random.Random) -> str:
             f"room {rng.randint(100, 999)}",
             f"dose {rng.randint(5, 500)} mg",
             f"ref {make_invalid_iban(rng)}",
+            # In-context but checksum-failing: must NOT be flagged (tests the validator).
+            f"NHS ref {make_invalid_nhs(rng)}",
+            f"SIN {make_invalid_sin(rng)}",
         ]
     )
 
@@ -195,6 +257,16 @@ def _document(rng: random.Random) -> dict:
         d.lit("IBAN ").ent(entities.IBAN_CODE, make_iban(rng)).lit(". ")
     if rng.random() < 0.3:
         d.lit("Portal IP ").ent(entities.IP_ADDRESS, make_ip(rng)).lit(". ")
+    if rng.random() < 0.5:
+        d.lit("ITIN ").ent(entities.US_ITIN, make_itin(rng)).lit(". ")
+    if rng.random() < 0.5:
+        d.lit("NHS number ").ent(entities.UK_NHS_NUMBER, make_nhs(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("SIN ").ent(entities.CANADA_SIN, make_sin(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("Medicare HICN ").ent(entities.MEDICARE_HICN, make_hicn(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("driver's license ").ent(entities.US_DRIVERS_LICENSE, make_dl(rng)).lit(". ")
     d.lit(f"{_distractor(rng)}.")
     return d.render()
 

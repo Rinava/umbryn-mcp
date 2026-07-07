@@ -21,14 +21,17 @@ from pathlib import Path
 from umbryn_mcp.config import Config
 from umbryn_mcp.factory import build_engine
 
-# The identifiers the quality bar is enforced on.
+# The identifiers the quality bar is enforced on — the HIPAA-listed identifier
+# types the default engine detects (clinical, beneficiary, and license numbers).
 HIPAA_ENTITIES = {
     "NPI",
     "DEA_NUMBER",
     "MEDICARE_BENEFICIARY_ID",
+    "MEDICARE_HICN",
     "MEDICAL_RECORD_NUMBER",
     "CLIA_NUMBER",
     "US_SSN",
+    "US_DRIVERS_LICENSE",
 }
 
 
@@ -108,12 +111,28 @@ def _print_table(counts: dict[str, Counts]) -> None:
     print("\n  * = HIPAA-relevant entity (subject to the quality gate)")
 
 
+def _print_markdown(counts: dict[str, Counts]) -> None:
+    """Emit a GitHub-flavored table, for pasting the published numbers into docs."""
+    print("| Entity | Precision | Recall | F1 | TP | FP | FN |")
+    print("|---|--:|--:|--:|--:|--:|--:|")
+    for name in sorted(counts):
+        c = counts[name]
+        label = f"`{name}`" + (" \\*" if name in HIPAA_ENTITIES else "")
+        print(
+            f"| {label} | {c.precision:.2f} | {c.recall:.2f} | {c.f1:.2f} "
+            f"| {c.tp} | {c.fp} | {c.fn} |"
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", default="regex", choices=["regex", "presidio", "auto"])
     parser.add_argument("--corpus", type=Path, default=Path(__file__).parent / "corpus.jsonl")
     parser.add_argument("--min-recall", type=float, default=0.90)
     parser.add_argument("--min-precision", type=float, default=0.80)
+    parser.add_argument(
+        "--markdown", action="store_true", help="print the per-entity table as GitHub markdown"
+    )
     args = parser.parse_args()
 
     if not args.corpus.exists():
@@ -124,7 +143,10 @@ def main() -> int:
         return 2
 
     counts = run(args.corpus, args.engine)
-    _print_table(counts)
+    if args.markdown:
+        _print_markdown(counts)
+    else:
+        _print_table(counts)
 
     # Aggregate the gate over HIPAA entities.
     gate = Counts()
