@@ -183,3 +183,33 @@ def test_drivers_license_is_anchored_on_its_label() -> None:
     assert entities.US_DRIVERS_LICENSE not in _types(engine, "the code X0987654 here")
     # The label with no digit-bearing token after it captures nothing.
     assert entities.US_DRIVERS_LICENSE not in _types(engine, "driver's license unavailable")
+
+
+def test_us_passport_requires_context() -> None:
+    engine = RegexEngine()
+
+    # Valid modern passport (letter + 8 digits)
+    assert entities.US_PASSPORT in _types(
+        engine,
+        "Passport number A12345678",
+    )
+    # Valid legacy passport (9 digits)
+    assert entities.US_PASSPORT in _types(
+        engine,
+        "passport 123456789",
+    )
+    # No passport-related context → should not detect
+    assert entities.US_PASSPORT not in _types(
+        engine,
+        "order ref A12345678 shipped",
+    )
+    # Invalid format: two leading letters
+    assert entities.US_PASSPORT not in _types(
+        engine,
+        "passport AB1234567",
+    )
+    # Invalid format: too short
+    assert entities.US_PASSPORT not in _types(
+        engine,
+        "passport 12345",
+    )

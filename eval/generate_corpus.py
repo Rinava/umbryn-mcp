@@ -195,6 +195,14 @@ def make_dl(rng: random.Random) -> str:
     return rng.choice(string.ascii_uppercase) + "".join(str(rng.randint(0, 9)) for _ in range(7))
 
 
+def make_passport(rng: random.Random) -> str:
+    # Generate either a legacy 9-digit passport number or a Next Generation
+    # passport number (one letter + eight digits). Entirely synthetic.
+    if rng.random() < 0.5:
+        return "".join(str(rng.randint(0, 9)) for _ in range(9))
+    return rng.choice(string.ascii_uppercase) + "".join(str(rng.randint(0, 9)) for _ in range(8))
+
+
 # --- a document builder that records exact spans ---------------------------
 class _Doc:
     def __init__(self) -> None:
@@ -267,6 +275,14 @@ def _document(rng: random.Random) -> dict:
         d.lit("Medicare HICN ").ent(entities.MEDICARE_HICN, make_hicn(rng)).lit(". ")
     if rng.random() < 0.4:
         d.lit("driver's license ").ent(entities.US_DRIVERS_LICENSE, make_dl(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("driver's license ").ent(entities.US_DRIVERS_LICENSE, make_dl(rng)).lit(". ")
+
+    if rng.random() < 0.4:
+        d.lit("Passport number ").ent(
+            entities.US_PASSPORT,
+            make_passport(rng),
+        ).lit(". ")
     d.lit(f"{_distractor(rng)}.")
     return d.render()
 

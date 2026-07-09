@@ -213,6 +213,7 @@ A ready-to-copy example lives at [`examples/umbryn_config.json`](examples/umbryn
 | **UK NHS number** (mod-11 check) | ✅ | ✅ |
 | **Canadian SIN** (Luhn check) | ✅ | ✅ |
 | **US driver's license** (context-anchored) | ✅ | ✅ |
+| **US passport** (context-anchored) | ✅ | ✅ |
 | **IBAN** (mod-97 / ISO 7064 check) | ✅ | ✅ |
 | **Person names** | ❌ | ✅ (spaCy NER) |
 | **Addresses / locations** | ❌ | ✅ (spaCy NER) |
@@ -239,6 +240,7 @@ Detection quality is **measured, not asserted**. The numbers below are the defau
 | `UK_NHS_NUMBER` | 1.00 | 1.00 | 1.00 | 95 | 0 | 0 |
 | `US_DRIVERS_LICENSE` \* | 1.00 | 1.00 | 1.00 | 81 | 0 | 0 |
 | `US_ITIN` | 1.00 | 1.00 | 1.00 | 97 | 0 | 0 |
+| `US_PASSPORT` | 1.00 | 1.00 | 1.00 | 73 | 0 | 0 |
 | `US_SSN` \* | 1.00 | 1.00 | 1.00 | 136 | 0 | 0 |
 
 `\*` = HIPAA-relevant identifier, subject to the CI quality gate. **Aggregate over the gated set: precision 0.99, recall 1.00.** The gate fails the build if recall drops below 0.90 or precision below 0.80. (`NPI`'s 12 false positives are look-alike 10-digit numbers that happen to pass the Luhn/80840 check digit — a deliberate, fail-safe bias toward over-redaction.)

@@ -18,6 +18,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   corpus now exercises every shipped recognizer (ITIN, NHS, SIN, HICN, driver's
   license), with checksum-failing look-alikes woven in as distractors, and the
   CI quality gate now also covers `MEDICARE_HICN` and `US_DRIVERS_LICENSE`.
+- **New recognizer**: US passport number (`US_PASSPORT`) — 9 chars (9 digits
+  legacy, or letter + 8 digits for Next Generation passports and passport
+  cards); context-gated, no checksum.
 
 ## [0.2.0] - 2026-07-06
 
