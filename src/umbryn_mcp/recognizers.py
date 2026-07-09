@@ -233,7 +233,7 @@ DEFAULT_RECOGNIZERS: tuple[Recognizer, ...] = (
     # ~1 in 10 random numbers, so require a nearby "SIN"/"social insurance".
     Recognizer(
         entity_type=entities.CANADA_SIN,
-        regex=r"\b\d{3}[ -]?\d{3}[ -]?\d{3}\b",
+        regex=r"\b\d{3}[ -]\d{3}[ -]\d{3}\b",
         base_score=0.4,
         context=("sin", "social insurance"),
         context_required=True,
