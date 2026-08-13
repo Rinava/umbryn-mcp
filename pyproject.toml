@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "umbryn-mcp"
-version = "0.2.0"
+version = "0.2.1"
 description = "Redacts PII/PHI from text before it reaches an LLM. Fail-closed, self-hosted, no egress."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -71,6 +71,7 @@ Homepage = "https://github.com/Rinava/umbryn-mcp"
 Repository = "https://github.com/Rinava/umbryn-mcp"
 Issues = "https://github.com/Rinava/umbryn-mcp/issues"
 Changelog = "https://github.com/Rinava/umbryn-mcp/blob/main/CHANGELOG.md"
+"Built by" = "https://www.kenda.app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/umbryn_mcp"]

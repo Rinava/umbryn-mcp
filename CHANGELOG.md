@@ -6,6 +6,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-13
+
 ### Fixed
 - **PEP 561 typing marker**: ship a `py.typed` file so downstream users who
   `pip install umbryn-mcp` actually receive the package's inline type
@@ -18,6 +20,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   corpus now exercises every shipped recognizer (ITIN, NHS, SIN, HICN, driver's
   license), with checksum-failing look-alikes woven in as distractors, and the
   CI quality gate now also covers `MEDICARE_HICN` and `US_DRIVERS_LICENSE`.
+- Project links to [Kenda](https://www.kenda.app), the team behind umbryn-mcp,
+  in the README and the PyPI sidebar.
 
 ## [0.2.0] - 2026-07-06
 
@@ -86,7 +90,8 @@ Initial release.
   gate; fast invariant test suite; stdio + Presidio integration smoke tests.
 - Docs: architecture, threat model, contributing guide, example client configs.
 
-[Unreleased]: https://github.com/Rinava/umbryn-mcp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Rinava/umbryn-mcp/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Rinava/umbryn-mcp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Rinava/umbryn-mcp/compare/v0.1.0...v0.1.1

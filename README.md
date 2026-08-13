@@ -272,3 +272,5 @@ The full guide — dev setup, conventions, and the **no-real-PHI rule for fixtur
 ## License
 
 [MIT](LICENSE) — matches Presidio and maximizes reuse. Built with [Microsoft Presidio](https://github.com/microsoft/presidio) (optional) and the [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+umbryn-mcp is built by the team behind [Kenda](https://www.kenda.app).
