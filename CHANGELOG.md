@@ -9,6 +9,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 - **New recognizer**: Australian Tax File Number (`AUSTRALIA_TFN`, mod-11
   weighted checksum), context-gated on nearby `TFN` / `tax file number` text.
+- **New recognizer**: US passport number (`US_PASSPORT`) — 9 chars (9 digits
+  legacy, or letter + 8 digits for Next Generation passports and passport
+  cards); context-gated, no checksum.
 
 ## [0.2.1] - 2026-08-13
 

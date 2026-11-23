@@ -34,6 +34,9 @@ UK_NHS_NUMBER: Final = "UK_NHS_NUMBER"  # UK National Health Service number (mod
 AUSTRALIA_TFN: Final = "AUSTRALIA_TFN"  # Australian Tax File Number (mod-11 weighted)
 CANADA_SIN: Final = "CANADA_SIN"  # Canadian Social Insurance Number (Luhn)
 US_DRIVERS_LICENSE: Final = "US_DRIVERS_LICENSE"  # Driver's license, context-anchored
+# 9 chars: 9 digits (legacy) or letter + 8 digits (NGP); no checksum
+US_PASSPORT: Final = "US_PASSPORT"
+
 
 # --- Financial identifiers --------------------------------------------------
 IBAN_CODE: Final = "IBAN_CODE"  # International Bank Account Number (mod-97 / ISO 7064)
