@@ -223,7 +223,7 @@ class Redactor:
             return
         try:
             self._audit(event, fields)
-        except Exception:  # noqa: BLE001 - audit must never break redaction
+        except Exception:  # audit must never break redaction
             logger.warning("umbryn-mcp: audit sink raised; continuing", exc_info=True)
 
     def _check_input(self, text: str) -> None:
