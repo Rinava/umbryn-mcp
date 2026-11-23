@@ -221,28 +221,29 @@ A ready-to-copy example lives at [`examples/umbryn_config.json`](examples/umbryn
 
 ## Benchmark
 
-Detection quality is **measured, not asserted**. The numbers below are the default (zero-dependency) engine scored against the [synthetic eval corpus](eval/) — 200 generated documents, ~1,800 labeled spans, with checksum-failing look-alikes woven in as distractors to keep precision honest. Reproduce them with `python eval/run_eval.py --markdown`.
+Detection quality is **measured, not asserted**. The numbers below are the default (zero-dependency) engine scored against the [synthetic eval corpus](eval/) — 200 generated documents, ~1,900 labeled spans, with checksum-failing look-alikes woven in as distractors to keep precision honest. Reproduce them with `python eval/run_eval.py --markdown`.
 
 | Entity | Precision | Recall | F1 | TP | FP | FN |
 |---|--:|--:|--:|--:|--:|--:|
-| `CANADA_SIN` | 1.00 | 1.00 | 1.00 | 87 | 0 | 0 |
-| `CLIA_NUMBER` \* | 1.00 | 1.00 | 1.00 | 105 | 0 | 0 |
-| `CREDIT_CARD` | 1.00 | 1.00 | 1.00 | 72 | 0 | 0 |
-| `DEA_NUMBER` \* | 1.00 | 1.00 | 1.00 | 119 | 0 | 0 |
-| `EMAIL_ADDRESS` | 1.00 | 1.00 | 1.00 | 144 | 0 | 0 |
-| `IBAN_CODE` | 1.00 | 1.00 | 1.00 | 87 | 0 | 0 |
-| `IP_ADDRESS` | 1.00 | 1.00 | 1.00 | 62 | 0 | 0 |
+| `AUSTRALIA_TFN` | 0.99 | 1.00 | 0.99 | 74 | 1 | 0 |
+| `CANADA_SIN` | 0.97 | 1.00 | 0.99 | 71 | 2 | 0 |
+| `CLIA_NUMBER` \* | 1.00 | 1.00 | 1.00 | 102 | 0 | 0 |
+| `CREDIT_CARD` | 1.00 | 1.00 | 1.00 | 84 | 0 | 0 |
+| `DEA_NUMBER` \* | 1.00 | 1.00 | 1.00 | 96 | 0 | 0 |
+| `EMAIL_ADDRESS` | 1.00 | 1.00 | 1.00 | 135 | 0 | 0 |
+| `IBAN_CODE` | 1.00 | 1.00 | 1.00 | 81 | 0 | 0 |
+| `IP_ADDRESS` | 1.00 | 1.00 | 1.00 | 59 | 0 | 0 |
 | `MEDICAL_RECORD_NUMBER` \* | 1.00 | 1.00 | 1.00 | 200 | 0 | 0 |
-| `MEDICARE_BENEFICIARY_ID` \* | 1.00 | 1.00 | 1.00 | 126 | 0 | 0 |
-| `MEDICARE_HICN` \* | 1.00 | 1.00 | 1.00 | 78 | 0 | 0 |
+| `MEDICARE_BENEFICIARY_ID` \* | 1.00 | 1.00 | 1.00 | 124 | 0 | 0 |
+| `MEDICARE_HICN` \* | 1.00 | 1.00 | 1.00 | 82 | 0 | 0 |
 | `NPI` \* | 0.94 | 1.00 | 0.97 | 200 | 12 | 0 |
-| `PHONE_NUMBER` | 1.00 | 1.00 | 1.00 | 144 | 0 | 0 |
-| `UK_NHS_NUMBER` | 1.00 | 1.00 | 1.00 | 95 | 0 | 0 |
-| `US_DRIVERS_LICENSE` \* | 1.00 | 1.00 | 1.00 | 81 | 0 | 0 |
-| `US_ITIN` | 1.00 | 1.00 | 1.00 | 97 | 0 | 0 |
+| `PHONE_NUMBER` | 1.00 | 1.00 | 1.00 | 135 | 0 | 0 |
+| `UK_NHS_NUMBER` | 1.00 | 1.00 | 1.00 | 114 | 0 | 0 |
+| `US_DRIVERS_LICENSE` \* | 1.00 | 1.00 | 1.00 | 73 | 0 | 0 |
+| `US_ITIN` | 1.00 | 1.00 | 1.00 | 101 | 0 | 0 |
 | `US_SSN` \* | 1.00 | 1.00 | 1.00 | 136 | 0 | 0 |
 
-`\*` = HIPAA-relevant identifier, subject to the CI quality gate. **Aggregate over the gated set: precision 0.99, recall 1.00.** The gate fails the build if recall drops below 0.90 or precision below 0.80. (`NPI`'s 12 false positives are look-alike 10-digit numbers that happen to pass the Luhn/80840 check digit — a deliberate, fail-safe bias toward over-redaction.)
+`\*` = HIPAA-relevant identifier, subject to the CI quality gate. **Aggregate over the gated set: precision 0.99, recall 1.00.** The gate fails the build if recall drops below 0.90 or precision below 0.80. (`NPI`'s 12 false positives are look-alike 10-digit numbers that happen to pass the Luhn/80840 check digit — a deliberate, fail-safe bias toward over-redaction.) The `AUSTRALIA_TFN` and `CANADA_SIN` false positives come from the corpus printing the two identifiers back to back: a number lands inside the other label's context window and happens to pass that checksum too.
 
 These are synthetic, best-case conditions with clean formatting and nearby context words; **real-world text is messier**. Treat this as a regression guardrail and a sanity check, not a guarantee — always evaluate on your own representative data.
 
@@ -273,3 +274,5 @@ The full guide — dev setup, conventions, and the **no-real-PHI rule for fixtur
 ## License
 
 [MIT](LICENSE) — matches Presidio and maximizes reuse. Built with [Microsoft Presidio](https://github.com/microsoft/presidio) (optional) and the [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk).
+
+umbryn-mcp is built by the team behind [Kenda](https://www.kenda.app).
