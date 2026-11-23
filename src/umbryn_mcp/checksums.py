@@ -111,6 +111,23 @@ def nhs_is_valid(nhs: str) -> bool:
     return check == digits[9]
 
 
+_TFN_WEIGHTS = (1, 4, 3, 7, 5, 8, 6, 9, 10)
+
+
+def tfn_is_valid(tfn: str) -> bool:
+    """Validate an Australian Tax File Number (9 digits, mod-11 weighted check).
+
+    Non-digits (the printed ``3 3 3`` grouping) are ignored. Each digit is
+    multiplied by the fixed weights ``(1, 4, 3, 7, 5, 8, 6, 9, 10)`` and the
+    weighted sum must be divisible by 11.
+    """
+    digits = [int(c) for c in _DIGITS.findall(tfn)]
+    if len(digits) != 9:
+        return False
+    total = sum(d * w for d, w in zip(digits, _TFN_WEIGHTS, strict=True))
+    return total % 11 == 0
+
+
 #: Validators a custom recognizer may reference *by name* from the config file.
 #: Config names a validator with a string, never supplies a callable, so a
 #: config file can attach a check digit to a custom recognizer without being able
@@ -121,4 +138,5 @@ VALIDATORS: dict[str, Callable[[str], bool]] = {
     "dea": dea_is_valid,
     "iban": iban_is_valid,
     "nhs": nhs_is_valid,
+    "tfn": tfn_is_valid,
 }
