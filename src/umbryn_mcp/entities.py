@@ -31,6 +31,7 @@ CLIA_NUMBER: Final = "CLIA_NUMBER"  # Clinical lab identifier
 # --- Government / taxpayer identifiers ---------------------------------------
 US_ITIN: Final = "US_ITIN"  # Individual Taxpayer Identification Number (9XX-range)
 UK_NHS_NUMBER: Final = "UK_NHS_NUMBER"  # UK National Health Service number (mod-11)
+AUSTRALIA_TFN: Final = "AUSTRALIA_TFN"  # Australian Tax File Number (mod-11 weighted)
 CANADA_SIN: Final = "CANADA_SIN"  # Canadian Social Insurance Number (Luhn)
 US_DRIVERS_LICENSE: Final = "US_DRIVERS_LICENSE"  # Driver's license, context-anchored
 

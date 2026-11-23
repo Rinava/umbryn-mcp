@@ -22,7 +22,7 @@ import string
 from pathlib import Path
 
 from umbryn_mcp import entities
-from umbryn_mcp.checksums import iban_is_valid, luhn_is_valid, nhs_is_valid
+from umbryn_mcp.checksums import iban_is_valid, luhn_is_valid, nhs_is_valid, tfn_is_valid
 
 _MBI_L = "ACDEFGHJKMNPQRTUVWXY"
 _MBI_AN = _MBI_L + string.digits
@@ -155,6 +155,23 @@ def make_nhs(rng: random.Random) -> str:
                 return base + str(c)
 
 
+def make_tfn(rng: random.Random) -> str:
+    # 9 digits with a valid mod-11 check digit, printed with 3-3-3 grouping.
+    while True:
+        base = "".join(str(rng.randint(0, 9)) for _ in range(8))
+        for c in range(10):
+            s = base + str(c)
+            if tfn_is_valid(s):
+                return f"{s[:3]} {s[3:6]} {s[6:]}"
+
+
+def make_invalid_tfn(rng: random.Random) -> str:
+    while True:
+        s = "".join(str(rng.randint(0, 9)) for _ in range(9))
+        if not tfn_is_valid(s):
+            return f"{s[:3]} {s[3:6]} {s[6:]}"
+
+
 def make_sin(rng: random.Random) -> str:
     # 9 Luhn-valid digits, printed in the distinctive 3-3-3 grouping.
     base = "".join(str(rng.randint(0, 9)) for _ in range(8))
@@ -230,6 +247,7 @@ def _distractor(rng: random.Random) -> str:
             f"ref {make_invalid_iban(rng)}",
             # In-context but checksum-failing: must NOT be flagged (tests the validator).
             f"NHS ref {make_invalid_nhs(rng)}",
+            f"TFN {make_invalid_tfn(rng)}",
             f"SIN {make_invalid_sin(rng)}",
         ]
     )
@@ -261,6 +279,8 @@ def _document(rng: random.Random) -> dict:
         d.lit("ITIN ").ent(entities.US_ITIN, make_itin(rng)).lit(". ")
     if rng.random() < 0.5:
         d.lit("NHS number ").ent(entities.UK_NHS_NUMBER, make_nhs(rng)).lit(". ")
+    if rng.random() < 0.4:
+        d.lit("TFN ").ent(entities.AUSTRALIA_TFN, make_tfn(rng)).lit(". ")
     if rng.random() < 0.4:
         d.lit("SIN ").ent(entities.CANADA_SIN, make_sin(rng)).lit(". ")
     if rng.random() < 0.4:

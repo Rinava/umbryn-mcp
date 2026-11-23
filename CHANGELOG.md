@@ -6,6 +6,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **New recognizer**: Australian Tax File Number (`AUSTRALIA_TFN`, mod-11
+  weighted checksum), context-gated on nearby `TFN` / `tax file number` text.
+
 ## [0.2.1] - 2026-08-13
 
 ### Fixed

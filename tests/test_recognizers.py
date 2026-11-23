@@ -13,6 +13,7 @@ from umbryn_mcp.checksums import (
     luhn_is_valid,
     nhs_is_valid,
     npi_is_valid,
+    tfn_is_valid,
 )
 from umbryn_mcp.regex_engine import RegexEngine
 
@@ -58,6 +59,16 @@ def test_valid_nhs(nhs: str) -> None:
 def test_invalid_nhs(nhs: str) -> None:
     # 1234567890 exercises the "check digit == 10" -> invalid branch.
     assert not nhs_is_valid(nhs)
+
+
+@pytest.mark.parametrize("tfn", ["963258140", "963 258 140", "963-258-140"])
+def test_valid_tfn(tfn: str) -> None:
+    assert tfn_is_valid(tfn)
+
+
+@pytest.mark.parametrize("tfn", ["963258141", "96325814", "9632581400"])
+def test_invalid_tfn(tfn: str) -> None:
+    assert not tfn_is_valid(tfn)
 
 
 # --- RegexEngine detection --------------------------------------------------
@@ -160,6 +171,13 @@ def test_canadian_sin_requires_context_and_luhn() -> None:
     assert entities.CANADA_SIN in _types(engine, "SIN 046-454-286")
     assert entities.CANADA_SIN not in _types(engine, "046-454-286")  # no context
     assert entities.CANADA_SIN not in _types(engine, "SIN 046-454-287")  # bad Luhn
+
+
+def test_australian_tfn_requires_context_and_checksum() -> None:
+    engine = RegexEngine()
+    assert entities.AUSTRALIA_TFN in _types(engine, "TFN 963 258 140")
+    assert entities.AUSTRALIA_TFN not in _types(engine, "963 258 140")  # no context
+    assert entities.AUSTRALIA_TFN not in _types(engine, "TFN 963 258 141")  # bad mod-11
 
 
 def test_medicare_hicn_needs_suffix_and_context() -> None:
